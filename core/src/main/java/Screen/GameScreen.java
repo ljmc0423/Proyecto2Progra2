@@ -22,6 +22,7 @@ public class GameScreen implements Screen {
     private SpriteBatch batch;
 
     private Texture floorTexture;
+    private Texture wallTexture;
     private Texture boxTexture;
     private Texture playerTexture;
     private Sprite playerSprite;
@@ -29,18 +30,18 @@ public class GameScreen implements Screen {
     //mapa 
     // . = floor, @ = player
     private final String[] levelData = {
-        "................",
-        "................",
-        "................",
-        "......$.........",
-        "................",
-        "................",
-        "................",
-        ".......@........",
-        "................",
-        ".............$..",
-        "................",
-        "................"
+        "################",
+        "#..............#",
+        "#..............#",
+        "#.....$........#",
+        "#..............#",
+        "#..............#",
+        "#..............#",
+        "#......@.......#",
+        "#..............#",
+        "#............$.#",
+        "#..............#",
+        "################"
     };
 
     //posición del player
@@ -56,11 +57,13 @@ public class GameScreen implements Screen {
         floorTexture = new Texture("floor.png");
         playerTexture = new Texture("player.png");
         boxTexture = new Texture("box.png");
+        wallTexture = new Texture("wall.png");
 
         //no le veo la diferencia con este filtro pero por si acaso
         floorTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         playerTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         boxTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        wallTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
 
         //encontrar el @
         int start[] = findPlayer(levelData);
@@ -106,6 +109,8 @@ public class GameScreen implements Screen {
 
                 if (tile == '$') {
                     batch.draw(boxTexture, x, y, TILE_SIZE, TILE_SIZE);
+                } else if (tile == '#') {
+                    batch.draw(wallTexture, x, y, TILE_SIZE, TILE_SIZE);
                 }
             }
         }
@@ -173,5 +178,6 @@ public class GameScreen implements Screen {
         floorTexture.dispose();
         playerTexture.dispose();
         boxTexture.dispose();
+        wallTexture.dispose();
     }
 }
