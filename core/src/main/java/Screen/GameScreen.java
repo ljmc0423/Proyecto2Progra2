@@ -17,6 +17,10 @@ public class GameScreen implements Screen {
     public static final int MAX_COLS = 16;
     public static final int MAX_ROWS = 12;
 
+    //MOVE_RATE es esencialmente los pasos por segundos
+    private static final float MOVE_RATE = 3.75f;
+    private float moveTimer = 0f;
+
     private OrthographicCamera camera;
     private FitViewport viewport;
     private SpriteBatch batch;
@@ -67,10 +71,11 @@ public class GameScreen implements Screen {
         floorTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         playerTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         boxTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        boxPlacedTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         wallTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         targetTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
 
-        //encontrar el @
+        //encontrar el @ (player)
         int start[] = findPlayer(levelData);
         playerCol = start[0];
         playerRow = start[1];
@@ -85,17 +90,29 @@ public class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT)) {
-            movePlayer(-1, 0);
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT)) {
-            movePlayer(1, 0);
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN)) {
-            movePlayer(0, -1);
-        }
-        if (Gdx.input.isKeyJustPressed(Input.Keys.UP)) {
-            movePlayer(0, 1);
+        moveTimer -= delta;
+        if (moveTimer <= 0f) {
+            int dx = 0, dy = 0;
+
+            if (Gdx.input.isKeyPressed(Input.Keys.LEFT)) {
+                dx = -1;
+                dy = 0;
+            } else if (Gdx.input.isKeyPressed(Input.Keys.RIGHT)) {
+                dx = 1;
+                dy = 0;
+            } else if (Gdx.input.isKeyPressed(Input.Keys.DOWN)) {
+                dx = 0;
+                dy = -1;
+            } else if (Gdx.input.isKeyPressed(Input.Keys.UP)) {
+                dx = 0;
+                dy = 1;
+            }
+
+            if (dx != 0 || dy != 0) {
+                movePlayer(dx, dy);
+                // reinicia el temporizador según la tasa (segundos por paso = 1 / MOVE_RATE)
+                moveTimer = 1f / MOVE_RATE;
+            }
         }
 
         ScreenUtils.clear(Color.BLACK);
@@ -186,5 +203,7 @@ public class GameScreen implements Screen {
         playerTexture.dispose();
         boxTexture.dispose();
         wallTexture.dispose();
+        targetTexture.dispose();
+        boxPlacedTexture.dispose();
     }
 }
