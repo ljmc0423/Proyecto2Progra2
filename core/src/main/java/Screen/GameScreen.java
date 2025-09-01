@@ -25,19 +25,21 @@ public class GameScreen implements Screen {
     private Texture wallTexture;
     private Texture boxTexture;
     private Texture playerTexture;
+    private Texture boxPlacedTexture;
+    private Texture targetTexture;
     private Sprite playerSprite;
 
     //mapa 
     // . = floor, @ = player
     private final String[] levelData = {
         "################",
-        "#..............#",
+        "#...........+..#",
         "#..............#",
         "#.....$........#",
         "#..............#",
+        "#..+...........#",
         "#..............#",
-        "#..............#",
-        "#......@.......#",
+        "#......@...+...#",
         "#..............#",
         "#............$.#",
         "#..............#",
@@ -57,13 +59,16 @@ public class GameScreen implements Screen {
         floorTexture = new Texture("floor.png");
         playerTexture = new Texture("player.png");
         boxTexture = new Texture("box.png");
+        boxPlacedTexture = new Texture("boxPlaced.png");
         wallTexture = new Texture("wall.png");
+        targetTexture = new Texture("target.png");
 
         //no le veo la diferencia con este filtro pero por si acaso
         floorTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         playerTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         boxTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
         wallTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
+        targetTexture.setFilter(Texture.TextureFilter.Nearest, Texture.TextureFilter.Nearest);
 
         //encontrar el @
         int start[] = findPlayer(levelData);
@@ -111,6 +116,8 @@ public class GameScreen implements Screen {
                     batch.draw(boxTexture, x, y, TILE_SIZE, TILE_SIZE);
                 } else if (tile == '#') {
                     batch.draw(wallTexture, x, y, TILE_SIZE, TILE_SIZE);
+                } else if (tile == '+') {
+                    batch.draw(targetTexture, x, y, TILE_SIZE, TILE_SIZE);
                 }
             }
         }
