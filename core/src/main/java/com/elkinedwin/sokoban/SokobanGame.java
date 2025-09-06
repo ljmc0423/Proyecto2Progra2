@@ -1,7 +1,7 @@
 package com.elkinedwin.sokoban;
 
 import com.badlogic.gdx.Game;
-import Screen.GameScreen;
+import Screens.GameScreen;
 
 public class SokobanGame extends Game {
 
