@@ -21,7 +21,7 @@ public class Lwjgl3Launcher {
         configuration.setForegroundFPS(
                 Lwjgl3ApplicationConfiguration.getDisplayMode().refreshRate); //limitar los fps a la tasa de refresco
 
-        configuration.setWindowedMode(768, 576);
+        configuration.setWindowedMode(1536, 864);
 
         configuration.setWindowIcon("libgdx128.png", "libgdx64.png", "libgdx32.png", "libgdx16.png");
         return configuration;

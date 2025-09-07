@@ -12,6 +12,11 @@ public final class MoveLogic implements Runnable {
     private volatile int playerX;
     private volatile int playerY;
 
+    private volatile int moveCount = 0;
+    private volatile int pushCount = 0;
+
+    private volatile boolean levelCompleted = false;
+
     public MoveLogic(TileMap map, BlockingQueue<Directions> moves) {
         this.map = map;
         this.moves = moves;
@@ -28,6 +33,14 @@ public final class MoveLogic implements Runnable {
         }
     }
 
+    public int getMoveCount() {
+        return moveCount;
+    }
+
+    public int getPushCount() {
+        return pushCount;
+    }
+
     public void stop() {
         running = false;
         moves.clear();
@@ -42,8 +55,18 @@ public final class MoveLogic implements Runnable {
                 if (direction == Directions.QUIT) {
                     break;
                 }
+                
+                if (levelCompleted) {
+                    continue;
+                }
+                
+                boolean moved = false;
                 synchronized (map) {
-                    applyMove(direction.dx, direction.dy);
+                    moved = applyMove(direction.dx, direction.dy);
+                }
+                
+                if (moved) {
+                    isCompleted();
                 }
             }
         } catch (InterruptedException ignored) {
@@ -52,30 +75,42 @@ public final class MoveLogic implements Runnable {
         }
     }
 
-    private void applyMove(int dx, int dy) {
+    private void isCompleted() {
+        for (int y = 0; y < GameConfig.ROWS; y++) {
+            for (int x = 0; x < GameConfig.COLS; x++) {
+                if (map.getTile(x, y) == TileMap.TARGET) {
+                    return;
+                }
+            }
+        }
+        
+        levelCompleted = true;
+    }
+
+    private boolean applyMove(int dx, int dy) {
         int nx = playerX + dx;
         int ny = playerY + dy;
 
         if (!map.inBounds(nx, ny)) {
-            return;
+            return false;
         }
 
         char front = map.getTile(nx, ny);
 
         if (front == TileMap.WALL) {
-            return;
+            return false;
         }
 
         if (isBox(front)) {
             int bx = nx + dx;
             int by = ny + dy;
             if (!map.inBounds(bx, by)) {
-                return;
+                return false;
             }
 
             char nextTile = map.getTile(bx, by);
             if (!isFree(nextTile)) {
-                return;
+                return false;
             }
 
             map.setTile(bx, by, (nextTile == TileMap.TARGET) ? TileMap.BOX_ON_TARGET : TileMap.BOX);
@@ -84,13 +119,22 @@ public final class MoveLogic implements Runnable {
 
             playerX = nx;
             playerY = ny;
-            return;
+
+            moveCount++;
+            pushCount++;
+
+            return true;
         }
 
         if (isFree(front)) {
             playerX = nx;
             playerY = ny;
+            moveCount++;
+            
+            return true;
         }
+        
+        return false;
     }
 
     private static boolean isBox(char c) {
@@ -107,5 +151,9 @@ public final class MoveLogic implements Runnable {
 
     public int getPlayerY() {
         return playerY;
+    }
+    
+    public boolean isLevelCompleted() {
+        return levelCompleted;
     }
 }
