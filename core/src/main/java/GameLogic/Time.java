@@ -50,15 +50,6 @@ public final class Time {
         return String.format("%02d:%02d", mm, ss);
     }
 
-    public synchronized String mmsscc() {
-        long ms = elapsedMs();
-        long s = ms / 1000;
-        long mm = s / 60;
-        long ss = s % 60;
-        long cc = (ms % 1000) / 10;
-        return String.format("%02d:%02d.%02d", mm, ss, cc);
-    }
-
     public synchronized boolean isRunning() {
         return running;
     }

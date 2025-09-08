@@ -1,12 +1,12 @@
 package com.elkinedwin.sokoban;
 
 import com.badlogic.gdx.Game;
-import Screens.GameScreen;
+import Screens.MenuScreen;
 
 public class SokobanGame extends Game {
 
     @Override
     public void create() {
-        setScreen(new GameScreen());
+        setScreen(new MenuScreen(this));
     }
 }

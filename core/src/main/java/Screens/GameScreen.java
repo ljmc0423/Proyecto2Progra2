@@ -38,6 +38,7 @@ public class GameScreen implements Screen {
     private Texture boxPlacedTexture;
     private Texture targetTexture;
     private Sprite playerSprite;
+    private final String currentLevelPath = "levels/level01.txt";
 
     //Clases e hilos
     private BlockingQueue<Directions> moves;
@@ -79,7 +80,7 @@ public class GameScreen implements Screen {
         playerSprite.setSize(tile, tile * ratio);
 
         //cargar nivel
-        LevelLoader loader = new LevelLoader("levels/level01.txt");
+        LevelLoader loader = new LevelLoader(currentLevelPath);
         char levData[][] = loader.LevelCharData();
         tileMap = new TileMap(levData);
 
@@ -103,6 +104,13 @@ public class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
+
+        if (input.isKeyJustPressed(Input.Keys.R)) {
+            resetLevel();
+            ScreenUtils.clear(Color.BLACK);
+            return;
+        }
+
         if (input.isKeyJustPressed(Input.Keys.UP)) {
             moves.offer(Directions.UP);
         }
@@ -115,8 +123,8 @@ public class GameScreen implements Screen {
         if (input.isKeyJustPressed(Input.Keys.RIGHT)) {
             moves.offer(Directions.RIGHT);
         }
-
-        //la idea es que lo de arriba se haga con delta en el futuro
+        //la idea es que lo de arriba se haga con delta en el futuro (pero lo dudo a este paso)
+        
         ScreenUtils.clear(Color.BLACK); //limpia la pantalla
 
         viewport.apply();
@@ -155,15 +163,37 @@ public class GameScreen implements Screen {
         float margin = 4f;
         float hudX = margin;
         float hudY = GameConfig.PX_HEIGHT - margin;
-        String hud = "Time " + time.mmss() + "   Moves " + moveLogic.getMoveCount() + "   Pushes " + moveLogic.getPushCount();
+        String hud = "Tiempo " + time.mmss() + "   Pasos " + moveLogic.getMoveCount() + "   Empujes " + moveLogic.getPushCount();
 
-        uiFont.setColor(0,0,0,1);
+        uiFont.setColor(0, 0, 0, 1);
         uiFont.draw(batch, hud, hudX + 1, hudY - 1);
-        uiFont.setColor(1,1,1,1);
+        uiFont.setColor(1, 1, 1, 1);
         uiFont.draw(batch, hud, hudX, hudY);
 
         batch.end();
 
+    }
+
+    private void resetLevel() {
+        if (moveLogic != null) {
+            moveLogic.stop();
+        }
+        if (logicThread != null) {
+            logicThread.interrupt();
+        }
+
+        moves = new ArrayBlockingQueue<>(1);
+
+        LevelLoader loader = new LevelLoader(currentLevelPath);
+        char grid[][] = loader.LevelCharData();
+        tileMap = new TileMap(grid);
+
+        moveLogic = new MoveLogic(tileMap, moves);
+        logicThread = new Thread(moveLogic, "logic-thread");
+        logicThread.start();
+
+        time.reset();
+        time.start();
     }
 
     @Override
