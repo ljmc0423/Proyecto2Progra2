@@ -4,7 +4,7 @@ import java.util.concurrent.BlockingQueue;
 
 public final class MoveLogic implements Runnable {
 
-    private final TileMap map;
+    private final TileMap tileMap;
     private final BlockingQueue<Directions> moves;
     private volatile boolean running = true;
 
@@ -17,17 +17,17 @@ public final class MoveLogic implements Runnable {
 
     private volatile boolean levelCompleted = false;
 
-    public MoveLogic(TileMap map, BlockingQueue<Directions> moves) {
-        this.map = map;
+    public MoveLogic(TileMap tileMap, BlockingQueue<Directions> moves) {
+        this.tileMap = tileMap;
         this.moves = moves;
 
         for (int y = 0; y < GameConfig.ROWS; y++) {
             for (int x = 0; x < GameConfig.COLS; x++) {
-                char c = map.getTile(x, y);
+                char c = tileMap.getTile(x, y);
                 if (c == TileMap.PLAYER || c == TileMap.PLAYER_ON_TARGET) {
                     playerX = x;
                     playerY = y;
-                    map.setTile(x, y, (c == TileMap.PLAYER_ON_TARGET) ? TileMap.TARGET : TileMap.FLOOR);
+                    tileMap.setTile(x, y, (c == TileMap.PLAYER_ON_TARGET) ? TileMap.TARGET : TileMap.FLOOR);
                 }
             }
         }
@@ -60,8 +60,8 @@ public final class MoveLogic implements Runnable {
                     continue;
                 }
                 
-                boolean moved = false;
-                synchronized (map) {
+                boolean moved;
+                synchronized (tileMap) {
                     moved = applyMove(direction.dx, direction.dy);
                 }
                 
@@ -78,7 +78,7 @@ public final class MoveLogic implements Runnable {
     private void isCompleted() {
         for (int y = 0; y < GameConfig.ROWS; y++) {
             for (int x = 0; x < GameConfig.COLS; x++) {
-                if (map.getTile(x, y) == TileMap.TARGET) {
+                if (tileMap.getTile(x, y) == TileMap.TARGET) {
                     return;
                 }
             }
@@ -91,11 +91,11 @@ public final class MoveLogic implements Runnable {
         int nx = playerX + dx;
         int ny = playerY + dy;
 
-        if (!map.inBounds(nx, ny)) {
+        if (!tileMap.inBounds(nx, ny)) {
             return false;
         }
 
-        char front = map.getTile(nx, ny);
+        char front = tileMap.getTile(nx, ny);
 
         if (front == TileMap.WALL) {
             return false;
@@ -104,18 +104,18 @@ public final class MoveLogic implements Runnable {
         if (isBox(front)) {
             int bx = nx + dx;
             int by = ny + dy;
-            if (!map.inBounds(bx, by)) {
+            if (!tileMap.inBounds(bx, by)) {
                 return false;
             }
 
-            char nextTile = map.getTile(bx, by);
+            char nextTile = tileMap.getTile(bx, by);
             if (!isFree(nextTile)) {
                 return false;
             }
 
-            map.setTile(bx, by, (nextTile == TileMap.TARGET) ? TileMap.BOX_ON_TARGET : TileMap.BOX);
+            tileMap.setTile(bx, by, (nextTile == TileMap.TARGET) ? TileMap.BOX_ON_TARGET : TileMap.BOX);
 
-            map.setTile(nx, ny, (front == TileMap.BOX_ON_TARGET) ? TileMap.TARGET : TileMap.FLOOR);
+            tileMap.setTile(nx, ny, (front == TileMap.BOX_ON_TARGET) ? TileMap.TARGET : TileMap.FLOOR);
 
             playerX = nx;
             playerY = ny;

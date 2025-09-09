@@ -2,7 +2,7 @@ package com.elkinedwin.sokoban.lwjgl3;
 
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
-import com.elkinedwin.sokoban.SokobanGame;
+import com.elkinedwin.sokoban.SokobanMain;
 
 public class Lwjgl3Launcher {
 
@@ -11,7 +11,7 @@ public class Lwjgl3Launcher {
     }
 
     private static Lwjgl3Application createApplication() {
-        return new Lwjgl3Application(new SokobanGame(), getDefaultConfiguration());
+        return new Lwjgl3Application(new SokobanMain(), getDefaultConfiguration());
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {

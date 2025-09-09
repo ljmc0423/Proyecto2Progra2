@@ -21,6 +21,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import GameLogic.Time;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import GameLogic.Juego;
 
 public class GameScreen implements Screen {
 
@@ -38,7 +39,6 @@ public class GameScreen implements Screen {
     private Texture boxPlacedTexture;
     private Texture targetTexture;
     private Sprite playerSprite;
-    private final String currentLevelPath = "levels/level01.txt";
 
     //Clases e hilos
     private BlockingQueue<Directions> moves;
@@ -48,6 +48,13 @@ public class GameScreen implements Screen {
 
     //tiempo
     private Time time;
+
+    private Juego juego;
+    private boolean levelCompleted = false;
+
+    public GameScreen(Juego juego) {
+        this.juego = juego;
+    }
 
     @Override
     public void show() {
@@ -80,7 +87,7 @@ public class GameScreen implements Screen {
         playerSprite.setSize(tile, tile * ratio);
 
         //cargar nivel
-        LevelLoader loader = new LevelLoader(currentLevelPath);
+        LevelLoader loader = new LevelLoader(juego.getCurrentLevelPath());
         char levData[][] = loader.LevelCharData();
         tileMap = new TileMap(levData);
 
@@ -124,7 +131,7 @@ public class GameScreen implements Screen {
             moves.offer(Directions.RIGHT);
         }
         //la idea es que lo de arriba se haga con delta en el futuro (pero lo dudo a este paso)
-        
+
         ScreenUtils.clear(Color.BLACK); //limpia la pantalla
 
         viewport.apply();
@@ -171,8 +178,9 @@ public class GameScreen implements Screen {
         uiFont.draw(batch, hud, hudX, hudY);
 
         batch.end();
+        }
 
-    }
+    
 
     private void resetLevel() {
         if (moveLogic != null) {
@@ -184,7 +192,7 @@ public class GameScreen implements Screen {
 
         moves = new ArrayBlockingQueue<>(1);
 
-        LevelLoader loader = new LevelLoader(currentLevelPath);
+        LevelLoader loader = new LevelLoader(juego.getCurrentLevelPath());
         char grid[][] = loader.LevelCharData();
         tileMap = new TileMap(grid);
 
