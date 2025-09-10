@@ -33,5 +33,5 @@ public class LevelLoader {
             data[i] = filas.get(i);
         }
         return data;
-    }
+    } //importante: el mapa se lee al revés
 }

@@ -95,7 +95,7 @@ public class GameScreen implements Screen {
 
         //hilo
         moveLogic = new MoveLogic(tileMap, moves);
-        logicThread = new Thread(moveLogic, "moveLogic-thread");
+        logicThread = new Thread(moveLogic);
         logicThread.start();
 
         //tiempo
@@ -129,7 +129,8 @@ public class GameScreen implements Screen {
         if (input.isKeyJustPressed(Input.Keys.RIGHT)) {
             moves.offer(Directions.RIGHT);
         }
-        //la idea es que lo de arriba se haga con delta en el futuro (pero lo dudo a este paso)
+        //la idea es que lo de arriba se haga con delta en el futuro (pero lo dudo a este paso) (yo del futuro: sehhh no creo que se vaya
+        //a hacer lo de delta xd)
 
         ScreenUtils.clear(Color.BLACK); //limpia la pantalla
 
@@ -196,7 +197,7 @@ public class GameScreen implements Screen {
         tileMap = new TileMap(grid);
 
         moveLogic = new MoveLogic(tileMap, moves);
-        logicThread = new Thread(moveLogic, "logic-thread");
+        logicThread = new Thread(moveLogic);
         logicThread.start();
 
         time.reset();
