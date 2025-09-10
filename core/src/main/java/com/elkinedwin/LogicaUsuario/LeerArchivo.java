@@ -12,27 +12,22 @@ public class LeerArchivo {
     archivinho=archivoactivo;  
    }
     
-    public static String LeerUsuario() throws IOException {
-        archivinho.seek(149);
-        archivinho.readUTF();
-        String datos = archivinho.readUTF();
+    public static void LeerUsuario() throws IOException {
+    archivinho.seek(149);
+    archivinho.readUTF();             
+    String datos = archivinho.readUTF();
 
-        String usuario = "";
-        boolean seguir = true;
-
-        for (int i = 0; i < datos.length(); i++) {
-            char c = datos.charAt(i);
-            if (c == ',') {
-                seguir = false;
-            }
-            if (seguir) {
-                usuario += c;
-            } else {
-                break;
-            }
-        }
-        return usuario;
+    StringBuilder usuario = new StringBuilder();
+    for (int i = 0; i < datos.length(); i++) {
+        char c = datos.charAt(i);
+        if (c == ',') break;           
+        usuario.append(c);
     }
+
+   
+    ManejoUsuarios.UsuarioActivo.setUsuario(usuario.toString());
+}
+
 
     public static String LeerNombre() throws IOException {
         archivinho.seek(149);
@@ -40,38 +35,40 @@ public class LeerArchivo {
 
     }
 
-    public static String LeerPassword() throws IOException {
+    public static void LeerPassword() throws IOException {
 
-        archivinho.seek(149);
-        archivinho.readUTF();
-        String datos = archivinho.readUTF();
+    archivinho.seek(149);
+    archivinho.readUTF();
+    String datos = archivinho.readUTF();
 
-        String pass = "";
-        int comas = 0;
-        boolean leer = false;
+    String pass = "";
+    int comas = 0;
+    boolean leer = false;
 
-        for (int i = 0; i < datos.length(); i++) {
-            char c = datos.charAt(i);
+    for (int i = 0; i < datos.length(); i++) {
+        char c = datos.charAt(i);
 
-            if (c == ',') {
-                comas++;
-                if (comas == 1) {
-                    leer = true;
-                    continue;
-                }
-                if (comas == 2) {
-                    leer = false;
-                    break;
-                }
+        if (c == ',') {
+            comas++;
+            if (comas == 1) {
+                leer = true;
+                continue;
             }
-
-            if (leer) {
-                pass += c;
+            if (comas == 2) {
+                leer = false;
+                break;
             }
         }
-        return pass;
 
+        if (leer) {
+            pass += c;
+        }
     }
+
+    
+    ManejoUsuarios.UsuarioActivo.setPassword(pass);
+}
+
 public static void getPartidasArchivo() {
     try {
         archivinho.seek(149);
@@ -118,11 +115,11 @@ public static void getPartidasArchivo() {
        
     }
 }
-public static String getImagenArchivo() {
+public static void getImagenArchivo() {
     try {
         archivinho.seek(149);
-        archivinho.readUTF();            
-        String datos = archivinho.readUTF(); 
+        archivinho.readUTF();           
+        String datos = archivinho.readUTF();
 
         String img = "";
         int comas = 0;
@@ -133,17 +130,19 @@ public static String getImagenArchivo() {
 
             if (c == ',') {
                 comas++;
-                if (comas == 3) { leer = true; continue; }  
-                if (comas == 4) { break; }                 
+                if (comas == 3) { leer = true; continue; } // entre 3ra y 4ta coma
+                if (comas == 4) { break; }
             }
 
             if (leer) img += c;
         }
-        return img;
+
+        ManejoUsuarios.UsuarioActivo.setImagen(img); 
     } catch (Exception e) {
-        return "";
+        ManejoUsuarios.UsuarioActivo.setImagen("");
     }
 }
+
 public static void LeerCompletados() throws IOException{
     archivinho.seek(0);
     for (int i = 1; i < 8; i++) {
@@ -153,8 +152,8 @@ public static void LeerCompletados() throws IOException{
 }
 public static void LeerMayorPuntuacion() throws IOException{
 archivinho.seek(7);
-    for (int i = 0; i < 10; i++) {
-        
+    for (int i = 1; i < 8; i++) {
+    ManejoUsuarios.UsuarioActivo.setMayorPuntuacion(i, archivinho.readInt());
     }
 }
 public static void LeerTiempototal() throws IOException{

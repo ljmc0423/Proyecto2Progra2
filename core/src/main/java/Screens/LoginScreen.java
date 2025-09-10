@@ -1,14 +1,13 @@
 package Screens;
 
 import com.badlogic.gdx.Game;
-import static com.badlogic.gdx.Gdx.app;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
-import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
@@ -16,6 +15,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.Skin;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextField;
 import com.badlogic.gdx.scenes.scene2d.ui.Window;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+
+import static com.badlogic.gdx.Gdx.app;
 
 public class LoginScreen extends BaseScreen {
 
@@ -32,19 +34,22 @@ public class LoginScreen extends BaseScreen {
 
     @Override
     protected void onShow() {
+        // Asegura carpeta de almacenamiento
+        com.elkinedwin.LogicaUsuario.ManejoArchivos.initStorage();
+
         // cargar assets
         titleTex = new Texture("ui/logintitle.png");
         loginTex = new Texture("ui/login.png");
         createPlayerTex = new Texture("ui/createplayer.png");
         exitTex = new Texture("ui/exit.png");
 
-        //añadirlos a las imagenes de los botones
+        // añadirlos a las imagenes de los botones
         titleImg = new Image(titleTex);
         loginImg = new Image(loginTex);
         createPlayerImg = new Image(createPlayerTex);
         exitImg = new Image(exitTex);
 
-        //skin
+        // skin
         skin = buildMinimalSkin();
 
         loginImg.addListener(new ClickListener() {
@@ -84,34 +89,106 @@ public class LoginScreen extends BaseScreen {
     @Override
     public void dispose() {
         super.dispose();
-        titleTex.dispose();
-        loginTex.dispose();
-        createPlayerTex.dispose();
-        exitTex.dispose();
-        skin.dispose();
+        if (titleTex != null) titleTex.dispose();
+        if (loginTex != null) loginTex.dispose();
+        if (createPlayerTex != null) createPlayerTex.dispose();
+        if (exitTex != null) exitTex.dispose();
+        if (skin != null) skin.dispose();
     }
 
+    // ===================== D I Á L O G O   L O G I N  =====================
     private void loginDialog() {
-
-    }
-
-    private void createPlayerDialog() {
-        final Dialog dialog = new Dialog("Crear jugador", skin);
-
+        final Dialog dialog = new Dialog("Iniciar sesión", skin);
         Table content = dialog.getContentTable();
-        content.pad(16f);                 // margen dentro del diálogo
+        content.pad(16f);
         content.defaults().pad(6f).fillX();
 
         final TextField user = new TextField("", skin);
         user.setMessageText("Usuario");
-        
-        final TextField name = new TextField("", skin);
-        name.setMessageText("Nombre");
+        user.setTextFieldFilter(onlyAlnumFilter());
 
         final TextField password = new TextField("", skin);
         password.setMessageText("Contraseña");
         password.setPasswordMode(true);
         password.setPasswordCharacter('*');
+        password.setTextFieldFilter(onlyAlnumFilter());
+
+        final Label error = new Label("", skin);
+        error.setColor(Color.SALMON);
+
+        content.add(new Label("Usuario", skin)).left().row();
+        content.add(user).width(340f).row();
+        content.add(new Label("Contraseña", skin)).left().row();
+        content.add(password).width(340f).row();
+        content.add(error).left().row();
+
+        // Botones
+        TextButton cancelBtn = new TextButton("Cancelar", skin);
+        TextButton okBtn     = new TextButton("Entrar", skin);
+
+        cancelBtn.addListener(new ClickListener() {
+            @Override public void clicked(InputEvent event, float x, float y) {
+                dialog.hide();
+            }
+        });
+
+        okBtn.addListener(new ClickListener() {
+            @Override public void clicked(InputEvent event, float x, float y) {
+                String u = user.getText().trim();
+                String p = password.getText().trim();
+
+                if (!isAlnum(u) || !isAlnum(p)) {
+                    error.setText("Solo letras o números.");
+                    return;
+                }
+
+                try {
+                    // Verificar existencia
+                    String path = com.elkinedwin.LogicaUsuario.ManejoArchivos.BuscarArchivoUsuario(u);
+                    if (path == null) {
+                        error.setText("Usuario no existe.");
+                        return;
+                    }
+                    // Abrir como archivo activo (si quieres dejarlo abierto aquí)
+                    com.elkinedwin.LogicaUsuario.ManejoArchivos.setArchivoactivo(path);
+
+                    dialog.hide();
+                    // Aquí puedes cambiar de pantalla si quieres:
+                    // game.setScreen(new MenuScreen(game));
+                } catch (Exception ex) {
+                    error.setText("Error: " + ex.getMessage());
+                }
+            }
+        });
+
+        dialog.getButtonTable().pad(0, 16f, 16f, 16f).defaults().width(120f).pad(6f);
+        dialog.getButtonTable().add(cancelBtn);
+        dialog.getButtonTable().add(okBtn);
+
+        dialog.show(stage);
+        stage.setKeyboardFocus(user);
+    }
+
+    // ===================== D I Á L O G O   C R E A R   U S U A R I O =====================
+    private void createPlayerDialog() {
+        final Dialog dialog = new Dialog("Crear jugador", skin);
+        Table content = dialog.getContentTable();
+        content.pad(16f);
+        content.defaults().pad(6f).fillX();
+
+        final TextField user = new TextField("", skin);
+        user.setMessageText("Usuario");
+        user.setTextFieldFilter(onlyAlnumFilter());
+
+        final TextField name = new TextField("", skin);
+        name.setMessageText("Nombre");
+        name.setTextFieldFilter(onlyAlnumFilter());
+
+        final TextField password = new TextField("", skin);
+        password.setMessageText("Contraseña");
+        password.setPasswordMode(true);
+        password.setPasswordCharacter('*');
+        password.setTextFieldFilter(onlyAlnumFilter());
 
         final Label error = new Label("", skin);
         error.setColor(Color.SALMON);
@@ -124,13 +201,59 @@ public class LoginScreen extends BaseScreen {
         content.add(password).width(340f).row();
         content.add(error).left().row();
 
+        // Botones
+        TextButton cancelBtn = new TextButton("Cancelar", skin);
+        TextButton createBtn = new TextButton("Crear", skin);
+
+        cancelBtn.addListener(new ClickListener() {
+            @Override public void clicked(InputEvent event, float x, float y) {
+                dialog.hide();
+            }
+        });
+
+        createBtn.addListener(new ClickListener() {
+            @Override public void clicked(InputEvent event, float x, float y) {
+                String u = user.getText().trim();
+                String n = name.getText().trim();
+                String p = password.getText().trim();
+
+                if (!isAlnum(u) || !isAlnum(n) || !isAlnum(p)) {
+                    error.setText("Solo letras o números (sin espacios ni símbolos).");
+                    return;
+                }
+
+                try {
+                    // ¿Existe?
+                    String existente = com.elkinedwin.LogicaUsuario.ManejoArchivos.BuscarArchivoUsuario(u);
+                    if (existente != null) {
+                        error.setText("El usuario ya existe.");
+                        return;
+                    }
+
+                    // Crear e inicializar
+                    com.elkinedwin.LogicaUsuario.ManejoArchivos.InicializarUsuario(n, u, p);
+
+                    dialog.hide();
+                    new Dialog("Listo", skin)
+                            .text("Usuario creado correctamente.")
+                            .button("OK", true)
+                            .show(stage);
+
+                } catch (Exception ex) {
+                    error.setText("Error: " + ex.getMessage());
+                }
+            }
+        });
+
         dialog.getButtonTable().pad(0, 16f, 16f, 16f).defaults().width(120f).pad(6f);
-        dialog.button("Cancelar", false);
-        dialog.button("Crear", true);
+        dialog.getButtonTable().add(cancelBtn);
+        dialog.getButtonTable().add(createBtn);
 
         dialog.show(stage);
+        stage.setKeyboardFocus(user);
     }
 
+    // ===================== Skin (look & feel) =====================
     private Skin buildMinimalSkin() {
         Skin skin = new Skin();
 
@@ -174,4 +297,14 @@ public class LoginScreen extends BaseScreen {
 
         return skin;
     }
+
+    // ===================== Helpers =====================
+    private TextField.TextFieldFilter onlyAlnumFilter() {
+        return (textField, c) -> Character.isLetterOrDigit(c);
+    }
+
+    private boolean isAlnum(String s) {
+        return s != null && s.matches("[A-Za-z0-9]+");
+    }
 }
+

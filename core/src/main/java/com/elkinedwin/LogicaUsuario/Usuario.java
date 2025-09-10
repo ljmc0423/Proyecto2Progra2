@@ -2,12 +2,13 @@ package com.elkinedwin.LogicaUsuario;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 
 
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.swing.ImageIcon;
+
 
 public class Usuario {
 
@@ -20,14 +21,15 @@ public class Usuario {
     private ArrayList<Boolean> nivelescompletados=new ArrayList<>();
     private int TiempoTJugado = 0;
     private ArrayList<Integer> Tiemponivel= new ArrayList<>();
-    private Map<String, Integer> configuraciones = new HashMap();
-    private ImageIcon avatar;
+    public Map<String, Integer> configuraciones = new HashMap();
+    public String avatar;
     private int Puntuaciongeneral = 0;
     private ArrayList<Usuario> Amigos = new ArrayList<>();
     private int tiempopromedio[] = new int[6];
     public ArrayList<Partida> historialpartidas = new ArrayList<>();
     private ArrayList<Integer> partidasxnivel = new ArrayList<>();
     private int partidastotales=0;
+    public Long sesionActual;
     
     public Usuario(String usuario, String nombre, String password,Long Fechas) {
         this.FechaRegistro=Fechas;
@@ -47,20 +49,20 @@ public class Usuario {
         configuraciones.put("Volumen",80);
         configuraciones.put("MoverArriba",38);
         configuraciones.put("MoverAbajo",40);
-        configuraciones.put("MoverDere",39);
+        configuraciones.put("MoverDer",39);
         configuraciones.put("MoverIzq",37);
         configuraciones.put("Reiniciar",82);
         configuraciones.put("Idioma", 1);
-        avatar=new ImageIcon("../Imagenes/Ulogo.png");
+        
         for (int i = 0; i < tiempopromedio.length; i++) {
          tiempopromedio[i]=0;   
         }
         for (int i = 0; i < 7; i++) {
          partidasxnivel.add(0);
         }
-   
+     sesionActual=Calendar.getInstance().getTimeInMillis();
     }
-
+     
     public int getPartidastotales() {
         return partidastotales;
     }
@@ -109,11 +111,10 @@ public class Usuario {
         this.password = password;
     }
 
-    public String getFecharegistro() {
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd  HH:mm:ss");
-        return sdf.format(FechaRegistro);
+    public Long getFecharegistro() {
+       return FechaRegistro;
     }
-
+    
     public String getUltimasesion() {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         return sdf.format(UltimaSesion);
@@ -162,4 +163,31 @@ public class Usuario {
    tiempoactual += tiempo;
       Tiemponivel.set(nivel-1, tiempoactual);
   }
+public void setImagen(String path){
+this.avatar=path;
+}
+public void setMayorPuntuacion(int nivel,int puntuacion){
+int puntuacionnueva=Mayorpuntuacion.get(nivel);
+puntuacionnueva += puntuacion;
+Mayorpuntuacion.set(nivel-1, puntuacionnueva);
+
+}
+public boolean getNivelesCompletados(int nivel){
+ return nivelescompletados.get(nivel);
+}
+public int getMayorPuntuacion(int nivel){
+return Mayorpuntuacion.get(nivel-1);
+}
+public int getTiempototal(){
+return TiempoTJugado;
+}
+public int getPartidasnivel(int nivel){
+return partidasxnivel.get(nivel-1);
+}
+public int getConfi(String clave){
+return configuraciones.get(clave);
+}
+public int getTiempoTnivel(int nivel){
+return partidasxnivel.get(nivel-1);
+}
 }

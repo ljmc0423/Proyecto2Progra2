@@ -19,7 +19,7 @@ public class Lwjgl3Launcher {
         configuration.setTitle("Sokoban");
         configuration.useVsync(true);
         configuration.setForegroundFPS(
-                Lwjgl3ApplicationConfiguration.getDisplayMode().refreshRate); //limitar los fps a la tasa de refresco
+                Lwjgl3ApplicationConfiguration.getDisplayMode().refreshRate); 
 
         configuration.setWindowedMode(1536, 864);
 
