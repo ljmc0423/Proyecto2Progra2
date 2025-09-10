@@ -2,7 +2,10 @@ package com.elkinedwin.sokoban.lwjgl3;
 
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
-import com.elkinedwin.LogicaUsuario.SokobanGame;
+import com.elkinedwin.LogicaUsuario.SokobanMain;
+
+
+
 
 public class Lwjgl3Launcher {
 
@@ -11,7 +14,7 @@ public class Lwjgl3Launcher {
     }
 
     private static Lwjgl3Application createApplication() {
-        return new Lwjgl3Application(new SokobanGame(), getDefaultConfiguration());
+        return new Lwjgl3Application(new SokobanMain(), getDefaultConfiguration());
     }
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {
@@ -21,7 +24,7 @@ public class Lwjgl3Launcher {
         configuration.setForegroundFPS(
                 Lwjgl3ApplicationConfiguration.getDisplayMode().refreshRate); //limitar los fps a la tasa de refresco
 
-        configuration.setWindowedMode(768, 576);
+        configuration.setWindowedMode(1536, 864);
 
         configuration.setWindowIcon("libgdx128.png", "libgdx64.png", "libgdx32.png", "libgdx16.png");
         return configuration;

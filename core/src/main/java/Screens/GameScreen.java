@@ -19,6 +19,9 @@ import GameLogic.TileMap;
 import static com.badlogic.gdx.Gdx.input;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import GameLogic.Time;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import GameLogic.Juego;
 
 public class GameScreen implements Screen {
 
@@ -26,6 +29,7 @@ public class GameScreen implements Screen {
     private OrthographicCamera camera;
     private FitViewport viewport;
     private SpriteBatch batch;
+    private BitmapFont uiFont;
 
     //assets
     private Texture floorTexture;
@@ -36,11 +40,20 @@ public class GameScreen implements Screen {
     private Texture targetTexture;
     private Sprite playerSprite;
 
-    //otros
+    //Clases e hilos
     private BlockingQueue<Directions> moves;
-    private MoveLogic logic;
+    private MoveLogic moveLogic;
     private Thread logicThread;
     private TileMap tileMap;
+
+    //tiempo
+    private Time time;
+
+    private final Juego juego;
+
+    public GameScreen(Juego juego) {
+        this.juego = juego;
+    }
 
     @Override
     public void show() {
@@ -73,7 +86,7 @@ public class GameScreen implements Screen {
         playerSprite.setSize(tile, tile * ratio);
 
         //cargar nivel
-        LevelLoader loader = new LevelLoader("levels/level01.txt");
+        LevelLoader loader = new LevelLoader(juego.getCurrentLevelPath());
         char levData[][] = loader.LevelCharData();
         tileMap = new TileMap(levData);
 
@@ -81,13 +94,28 @@ public class GameScreen implements Screen {
         moves = new ArrayBlockingQueue<>(1);
 
         //hilo
-        logic = new MoveLogic(tileMap, moves);
-        logicThread = new Thread(logic, "logic-thread");
+        moveLogic = new MoveLogic(tileMap, moves);
+        logicThread = new Thread(moveLogic);
         logicThread.start();
+
+        //tiempo
+        time = new Time();
+        time.start();
+
+        uiFont = new BitmapFont();
+        uiFont.getData().setScale(1f);
+        uiFont.setUseIntegerPositions(true);
+
     }
 
     @Override
     public void render(float delta) {
+
+        if (input.isKeyJustPressed(Input.Keys.R)) {
+            resetLevel();
+            ScreenUtils.clear(Color.BLACK);
+            return;
+        }
 
         if (input.isKeyJustPressed(Input.Keys.UP)) {
             moves.offer(Directions.UP);
@@ -101,8 +129,9 @@ public class GameScreen implements Screen {
         if (input.isKeyJustPressed(Input.Keys.RIGHT)) {
             moves.offer(Directions.RIGHT);
         }
+        //la idea es que lo de arriba se haga con delta en el futuro (pero lo dudo a este paso) (yo del futuro: sehhh no creo que se vaya
+        //a hacer lo de delta xd)
 
-        //la idea es que lo de arriba se haga con delta en el futuro
         ScreenUtils.clear(Color.BLACK); //limpia la pantalla
 
         viewport.apply();
@@ -132,14 +161,47 @@ public class GameScreen implements Screen {
                 }
             }
 
-            int px = logic.getPlayerX();
-            int py = logic.getPlayerY();
+            int px = moveLogic.getPlayerX();
+            int py = moveLogic.getPlayerY();
             playerSprite.setPosition(px * GameConfig.TILE_SIZE, py * GameConfig.TILE_SIZE);
         }
         playerSprite.draw(batch);
 
-        batch.end();
+        float margin = 4f;
+        float hudX = margin;
+        float hudY = GameConfig.PX_HEIGHT - margin;
+        String hud = "Tiempo " + time.mmss() + "   Pasos " + moveLogic.getMoveCount() + "   Empujes " + moveLogic.getPushCount();
 
+        uiFont.setColor(0, 0, 0, 1);
+        uiFont.draw(batch, hud, hudX + 1, hudY - 1);
+        uiFont.setColor(1, 1, 1, 1);
+        uiFont.draw(batch, hud, hudX, hudY);
+
+        batch.end();
+        }
+
+    
+
+    private void resetLevel() {
+        if (moveLogic != null) {
+            moveLogic.stop();
+        }
+        if (logicThread != null) {
+            logicThread.interrupt();
+        }
+
+        moves = new ArrayBlockingQueue<>(1);
+
+        LevelLoader loader = new LevelLoader(juego.getCurrentLevelPath());
+        char grid[][] = loader.LevelCharData();
+        tileMap = new TileMap(grid);
+
+        moveLogic = new MoveLogic(tileMap, moves);
+        logicThread = new Thread(moveLogic);
+        logicThread.start();
+
+        time.reset();
+        time.start();
     }
 
     @Override
@@ -161,16 +223,18 @@ public class GameScreen implements Screen {
 
     @Override
     public void pause() {
+        time.pause();
     }
 
     @Override
     public void resume() {
+        time.resume();
     }
 
     @Override
     public void hide() {
-        if (logic != null) {
-            logic.stop();
+        if (moveLogic != null) {
+            moveLogic.stop();
         }
 
         if (logicThread != null) {

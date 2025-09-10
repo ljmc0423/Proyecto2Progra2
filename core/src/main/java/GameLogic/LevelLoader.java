@@ -15,9 +15,7 @@ public class LevelLoader {
     }
 
     public char[][] LevelCharData() {
-        if (!level.exists()) {
-            return null;
-        }
+        if (!level.exists()) return null;
 
         ArrayList<char[]> filas = new ArrayList<>();
 
@@ -35,6 +33,5 @@ public class LevelLoader {
             data[i] = filas.get(i);
         }
         return data;
-    }
-
+    } //importante: el mapa se lee al revés
 }

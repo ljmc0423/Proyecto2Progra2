@@ -75,10 +75,10 @@ public class LeerArchivo {
 public static void getPartidasArchivo() {
     try {
         archivinho.seek(149);
-        archivinho.readUTF();               // pasar el "por default"
-        String datos = archivinho.readUTF(); // todo el string pegado
+        archivinho.readUTF();             
+        String datos = archivinho.readUTF(); 
 
-        // extraer lo que está entre la 2da y 3ra coma (las partidas)
+       
         String blob = "";
         int comas = 0;
         boolean leer = false;
@@ -86,21 +86,21 @@ public static void getPartidasArchivo() {
             char c = datos.charAt(i);
             if (c == ',') {
                 comas++;
-                if (comas == 2) { leer = true;  continue; } // empieza después de la 2da
-                if (comas == 3) { leer = false; break; }    // termina en la 3ra
+                if (comas == 2) { leer = true;  continue; } 
+                if (comas == 3) { leer = false; break; }   
             }
             if (leer) blob += c;
         }
         if (blob.isEmpty()) return;
 
-        // cada partida: Fecha.intentos.logros.tiempo  separadas por '>'
+       
         String[] partes = blob.split(">");
         for (String p : partes) {
             if (p == null) continue;
             p = p.trim();
             if (p.isEmpty()) continue;
 
-            String[] a = p.split("\\."); // {Fecha, intentos, logros, tiempo}
+            String[] a = p.split("\\."); 
             if (a.length < 4) continue;
 
             String fecha  = a[0];
