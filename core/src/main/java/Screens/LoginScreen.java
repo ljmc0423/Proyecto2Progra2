@@ -50,7 +50,7 @@ public class LoginScreen extends BaseScreen {
         loginImg.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
-                loginDialog();
+                game.setScreen(new MenuScreen(game));
             }
         });
 
