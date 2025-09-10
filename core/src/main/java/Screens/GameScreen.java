@@ -49,8 +49,7 @@ public class GameScreen implements Screen {
     //tiempo
     private Time time;
 
-    private Juego juego;
-    private boolean levelCompleted = false;
+    private final Juego juego;
 
     public GameScreen(Juego juego) {
         this.juego = juego;

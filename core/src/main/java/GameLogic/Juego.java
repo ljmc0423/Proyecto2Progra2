@@ -3,7 +3,7 @@ package GameLogic;
 public abstract class Juego {
 
     protected final String levelPaths[];
-    protected int currentLevelIndex = 0;
+    protected int currentLevelIndex = 1;
 
     protected Juego(String levelPaths[]) {
         this.levelPaths = levelPaths;
