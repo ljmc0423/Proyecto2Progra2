@@ -53,7 +53,6 @@ public class MenuScreen extends BaseScreen {
         configImg.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
-                game.setScreen(new ConfigScreen(game));
             }
         });
 
