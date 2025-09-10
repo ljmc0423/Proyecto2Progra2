@@ -1,5 +1,6 @@
 package Screens;
 
+import static com.badlogic.gdx.Gdx.input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.utils.ScreenUtils;
@@ -14,6 +15,7 @@ public abstract class BaseScreen implements Screen {
     @Override
     public void show() {
         stage = new Stage(new ScreenViewport());
+        input.setInputProcessor(stage);
         onShow();
     }
 
