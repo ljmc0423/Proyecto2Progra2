@@ -1,11 +1,12 @@
 
-package com.elkinedwin.sokoban;
+package com.elkinedwin.LogicaUsuario;
 
 import java.util.ArrayList;
 
 
 public class ManejoUsuarios {
 public static ArrayList<Usuario> ListaUsuarios=new ArrayList<>();
+public static Usuario UsuarioActivo;
 
 public static Usuario buscarusuario(int indice,String usuario){
 if(indice>ListaUsuarios.size()){

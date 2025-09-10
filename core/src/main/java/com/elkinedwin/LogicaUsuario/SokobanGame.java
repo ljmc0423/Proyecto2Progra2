@@ -1,4 +1,4 @@
-package com.elkinedwin.sokoban;
+package com.elkinedwin.LogicaUsuario;
 
 import com.badlogic.gdx.Game;
 import Screens.GameScreen;
