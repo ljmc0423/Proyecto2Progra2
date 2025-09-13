@@ -2,7 +2,7 @@ package GameLogic;
 
 public class TileMap {
 
-    private char tileMap[][];
+    private final char tileMap[][];
 
     public static final char WALL = '#';
     public static final char FLOOR = '.';

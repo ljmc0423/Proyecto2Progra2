@@ -51,6 +51,8 @@ public class GameScreen implements Screen {
 
     private final Juego juego;
 
+    private boolean levelCompleted = false;
+
     public GameScreen(Juego juego) {
         this.juego = juego;
     }
@@ -178,9 +180,18 @@ public class GameScreen implements Screen {
         uiFont.draw(batch, hud, hudX, hudY);
 
         batch.end();
+
+        if (moveLogic.isLevelCompleted() && !levelCompleted) {
+            levelCompleted = true;
+
+            if (juego.advanceLevel()) {
+                resetLevel();
+                levelCompleted = false;
+            } else {
+            }
         }
 
-    
+    }
 
     private void resetLevel() {
         if (moveLogic != null) {
@@ -202,6 +213,7 @@ public class GameScreen implements Screen {
 
         time.reset();
         time.start();
+        levelCompleted = false;
     }
 
     @Override
