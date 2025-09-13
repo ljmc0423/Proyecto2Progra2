@@ -8,143 +8,113 @@ import java.util.Calendar;
 
 public class ManejoArchivos {
 
-    public static File Usuarios;
-    public static RandomAccessFile ArchivoActivo;
+    public static File carpetaUsuarios;
+    public static RandomAccessFile archivoAbierto;
 
-    
-   public static void initStorage() {
-    if (Usuarios == null) Usuarios = new File("Usuarios");
-    if (!Usuarios.exists()) Usuarios.mkdirs();
-    System.out.println("Usuarios dir = " + Usuarios.getAbsolutePath());
-    
-}
+    public static void iniciarAlmacenamiento() {
+        if (carpetaUsuarios == null) carpetaUsuarios = new File("Usuarios");
+        if (!carpetaUsuarios.exists()) carpetaUsuarios.mkdirs();
+    }
 
-    
-    private static void ensureStorage() {
-        if (Usuarios == null || !Usuarios.exists()) {
-            initStorage();
+    private static void asegurarCarpeta() {
+        if (carpetaUsuarios == null || !carpetaUsuarios.exists()) {
+            iniciarAlmacenamiento();
         }
     }
 
-  
-    private static RandomAccessFile CrearArchivoUsuario(String nombrearchivo) throws FileNotFoundException {
-        ensureStorage();
-        return new RandomAccessFile(new File(Usuarios, nombrearchivo + ".bin"), "rw");
+    private static RandomAccessFile crearArchivoUsuario(String base) throws FileNotFoundException {
+        asegurarCarpeta();
+        return new RandomAccessFile(new File(carpetaUsuarios, base + ".bin"), "rw");
     }
 
     /*
-    Formato:
-                                  0  1  2  3  4  5  6
-    boolean: niveles completados [1][2][3][4][5][6][7]
-                                  7   11  15  19  23  27  31
-    int:MayorPuntuacion c/nivel  [1] [2] [3] [4] [5] [6] [7]
-                                  35
-    int: TiempoTotalJugado        int
-                                  39
-    int: puntuacionGeneral        int
-                                   43
-    int: totalpartidas            int
-                                   47 51 55 59 64 69 73
-    int: partidasxnivel           [1][2][3][4][5][6][7]
-                                   77
-    int: volumen                  int
-                                  81   85     89       93         97
-    int:KeyCode controles        [arr][abajo][derecha][izquierda][Reiniciar]
-                                  101 105 109 113 117 121 125
-    int: Tiempototalxnivel       [1] [2] [3] [4] [5] [6] [7]
-                                   129
-    int Idioma                    int          // 1=Español, 2=Inglés, 3=Portugués
-                                   133         141
-    long Fechas:                 FechaRegistro  UltimaSesion
-                                   149
-    String Nombre:               Nombre
-    String datos (UTF):          Usuario,Contrasena,Partidas(Fecha.Intentos.Logros.Tiempo[>...]),ImagenPath,
+    Formato (offsets):
+    0..6  : boolean[7] niveles completados
+    7     : int[7]  MayorPuntuacion
+    35    : int     TiempoTotalJugado
+    39    : int     PuntuacionGeneral
+    43    : int     TotalPartidas
+    47    : int[7]  PartidasPorNivel
+    77    : int     Volumen
+    81    : int[5]  KeyCodes (Arriba, Abajo, Derecha, Izquierda, Reiniciar)
+    101   : int[7]  TiempoPorNivel
+    129   : int     Idioma
+    133   : long    FechaRegistro
+    141   : long    UltimaSesion (siempre la ANTERIOR)
+    149   : UTF     Nombre
+           UTF     Datos: "Usuario,Password,Partidas(Fecha.Intentos.Logros.Tiempo[>...]),ImagenPath,"
     */
+    public static void crearUsuario(String nombre, String usuario, String contrasena) throws IOException {
+        asegurarCarpeta();
 
-    public static void InicializarUsuario(String nombre, String usuario, String password) throws IOException {
-        ensureStorage();
+        RandomAccessFile f = crearArchivoUsuario(usuario);
 
-        RandomAccessFile archivo = CrearArchivoUsuario(nombre);
+        f.seek(0);
+        for (int i = 0; i < 7; i++) f.writeBoolean(false);
 
-       
-        for (int i = 0; i < 7; i++) {
-            archivo.writeBoolean(false);
-        }
+        f.seek(7);
+        for (int i = 0; i < 7; i++) f.writeInt(0);
 
-        
-        for (int i = 0; i < 17; i++) {
-            archivo.writeInt(0);
-        }
+        f.seek(35); f.writeInt(0);
+        f.seek(39); f.writeInt(0);
+        f.seek(43); f.writeInt(0);
 
-        archivo.writeInt(80);
+        f.seek(47);
+        for (int i = 0; i < 7; i++) f.writeInt(0);
 
-       
-        archivo.writeInt(38);
-        archivo.writeInt(40);
-        archivo.writeInt(39);
-        archivo.writeInt(37);
-        archivo.writeInt(82);
+        f.seek(77); f.writeInt(80);
 
-        
-        for (int i = 0; i < 7; i++) {
-            archivo.writeInt(0);
-        }
+        f.seek(81);
+        f.writeInt(38);
+        f.writeInt(40);
+        f.writeInt(39);
+        f.writeInt(37);
+        f.writeInt(82);
 
-        
-        archivo.writeInt(1);
+        f.seek(101);
+        for (int i = 0; i < 7; i++) f.writeInt(0);
 
-       
-        long fechas = Calendar.getInstance().getTimeInMillis();
-        archivo.writeLong(fechas); 
-        archivo.writeLong(fechas); 
+        f.seek(129); f.writeInt(1);
 
-        
-        archivo.writeUTF(nombre);
+        long ahora = Calendar.getInstance().getTimeInMillis();
+        f.seek(133); f.writeLong(ahora);
+        f.seek(141); f.writeLong(ahora);
 
-        
+        f.seek(149);
+        f.writeUTF(nombre == null ? "" : nombre);
+
         StringBuilder datos = new StringBuilder();
         datos.append(usuario == null ? "" : usuario).append(',')
-             .append(password == null ? "" : password).append(',')
-             .append("...")  
-             .append(',')
-             .append("")     
-             .append(',');
+             .append(contrasena == null ? "" : contrasena).append(',')
+             .append("...").append(',')
+             .append("").append(',');
+        f.writeUTF(datos.toString());
 
-        archivo.writeUTF(datos.toString());
-
-        
-        ManejoUsuarios.UsuarioActivo = new Usuario(usuario, nombre, password, fechas);
+        ManejoUsuarios.UsuarioActivo = new Usuario(usuario, nombre, contrasena, ahora);
     }
 
-    
-    public static String BuscarArchivoUsuario(String usuario) {
+    public static String buscarArchivoUsuario(String usuario) {
         if (usuario == null) return null;
-
-        ensureStorage();
-
-        String base = stripBinExt(usuario).trim();
+        asegurarCarpeta();
+        String base = quitarExtBin(usuario).trim();
         if (base.isEmpty()) return null;
-
-        File f = new File(Usuarios, base + ".bin");
+        File f = new File(carpetaUsuarios, base + ".bin");
         return f.isFile() ? f.getPath() : null;
     }
 
-    private static String stripBinExt(String s) {
+    private static String quitarExtBin(String s) {
         int p = s.lastIndexOf('.');
         return (p >= 0) ? s.substring(0, p) : s;
     }
 
-    
-    public static void setArchivoactivo(String patharchivo) throws FileNotFoundException {
-        
-        ArchivoActivo = new RandomAccessFile(patharchivo, "rw");
+    public static void abrirArchivo(String ruta) throws FileNotFoundException {
+        archivoAbierto = new RandomAccessFile(ruta, "rw");
     }
 
-    
-    public static void setArchivoActivoPorUsuario(String usuario) throws IOException {
-        ensureStorage();
-        String path = BuscarArchivoUsuario(usuario);
+    public static void abrirArchivoDeUsuario(String usuario) throws IOException {
+        asegurarCarpeta();
+        String path = buscarArchivoUsuario(usuario);
         if (path == null) throw new FileNotFoundException("No existe el usuario: " + usuario);
-        ArchivoActivo = new RandomAccessFile(path, "rw");
+        archivoAbierto = new RandomAccessFile(path, "rw");
     }
 }

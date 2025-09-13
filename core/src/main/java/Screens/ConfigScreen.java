@@ -127,7 +127,7 @@ public class ConfigScreen extends BaseScreen {
     // Lee una tecla desde el HashMap directo de UsuarioActivo, con default
     private int getCfg(String key, int def) {
         try {
-            Integer v = ManejoUsuarios.UsuarioActivo.configuraciones.get(key);
+            Integer v = ManejoUsuarios.UsuarioActivo.configuracion.get(key);
             return (v != null) ? v : def;
         } catch (Exception e) {
             return def;
@@ -169,7 +169,7 @@ public class ConfigScreen extends BaseScreen {
             value = keycode;
             button.setText(Input.Keys.toString(value));
             try {
-                ManejoUsuarios.UsuarioActivo.configuraciones.put(cfgKey, value);
+                ManejoUsuarios.UsuarioActivo.configuracion.put(cfgKey, value);
             } catch (Exception ignored) { /* si por alguna razón es null, no rompemos la UI */ }
             listening = false;
             return true;

@@ -8,7 +8,7 @@ public class Lwjgl3Launcher {
 
     public static void main(String[] args) {
         createApplication();
-    }
+    } 
 
     private static Lwjgl3Application createApplication() {
         return new Lwjgl3Application(new SokobanMain(), getDefaultConfiguration());

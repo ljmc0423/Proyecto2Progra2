@@ -1,20 +1,12 @@
 package Screens;
 
 import com.badlogic.gdx.Game;
-import com.badlogic.gdx.scenes.scene2d.Stage;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.ui.Dialog;
-import com.badlogic.gdx.scenes.scene2d.ui.Label;
-import com.badlogic.gdx.scenes.scene2d.ui.Skin;
-import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
-import com.badlogic.gdx.scenes.scene2d.ui.TextField;
-import com.badlogic.gdx.scenes.scene2d.ui.Window;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 
 import static com.badlogic.gdx.Gdx.app;
@@ -34,22 +26,18 @@ public class LoginScreen extends BaseScreen {
 
     @Override
     protected void onShow() {
-        // Asegura carpeta de almacenamiento
-        com.elkinedwin.LogicaUsuario.ManejoArchivos.initStorage();
+        com.elkinedwin.LogicaUsuario.ManejoArchivos.iniciarAlmacenamiento();
 
-        // cargar assets
         titleTex = new Texture("ui/logintitle.png");
         loginTex = new Texture("ui/login.png");
         createPlayerTex = new Texture("ui/createplayer.png");
         exitTex = new Texture("ui/exit.png");
 
-        // añadirlos a las imagenes de los botones
         titleImg = new Image(titleTex);
         loginImg = new Image(loginTex);
         createPlayerImg = new Image(createPlayerTex);
         exitImg = new Image(exitTex);
 
-        // skin
         skin = buildMinimalSkin();
 
         loginImg.addListener(new ClickListener() {
@@ -96,7 +84,6 @@ public class LoginScreen extends BaseScreen {
         if (skin != null) skin.dispose();
     }
 
-    // ===================== D I Á L O G O   L O G I N  =====================
     private void loginDialog() {
         final Dialog dialog = new Dialog("Iniciar sesión", skin);
         Table content = dialog.getContentTable();
@@ -122,7 +109,6 @@ public class LoginScreen extends BaseScreen {
         content.add(password).width(340f).row();
         content.add(error).left().row();
 
-        // Botones
         TextButton cancelBtn = new TextButton("Cancelar", skin);
         TextButton okBtn     = new TextButton("Entrar", skin);
 
@@ -143,20 +129,45 @@ public class LoginScreen extends BaseScreen {
                 }
 
                 try {
-                    // Verificar existencia
-                    String path = com.elkinedwin.LogicaUsuario.ManejoArchivos.BuscarArchivoUsuario(u);
+                    String path = com.elkinedwin.LogicaUsuario.ManejoArchivos.buscarArchivoUsuario(u);
                     if (path == null) {
                         error.setText("Usuario no existe.");
                         return;
                     }
-                    // Abrir como archivo activo (si quieres dejarlo abierto aquí)
-                    com.elkinedwin.LogicaUsuario.ManejoArchivos.setArchivoactivo(path);
+
+                    com.elkinedwin.LogicaUsuario.ManejoArchivos.abrirArchivo(path);
+                    com.elkinedwin.LogicaUsuario.LeerArchivo.usarArchivo(
+                            com.elkinedwin.LogicaUsuario.ManejoArchivos.archivoAbierto
+                    );
+
+                    long ahora = System.currentTimeMillis();
+                    com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo =
+                            new com.elkinedwin.LogicaUsuario.Usuario(u, "", "", ahora);
+
+                    com.elkinedwin.LogicaUsuario.LeerArchivo.cargarUsuario();
+
+                    String passArchivo = com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo.getContrasena();
+                    if (passArchivo == null || !passArchivo.equals(p)) {
+                        com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo = null;
+                        error.setText("Contraseña incorrecta.");
+                        return;
+                    }
+
+                    Long anterior = com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo.getUltimaSesion();
+                    if (anterior == null) anterior = 0L;
+                    com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo.sesionAnterior = anterior;
+                    com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo.sesionActual = System.currentTimeMillis();
+
+                    com.elkinedwin.LogicaUsuario.ArchivoGuardar.usarArchivo(
+                            com.elkinedwin.LogicaUsuario.ManejoArchivos.archivoAbierto
+                    );
+                    com.elkinedwin.LogicaUsuario.ArchivoGuardar.guardarFechas();
 
                     dialog.hide();
-                    // Aquí puedes cambiar de pantalla si quieres:
-                    // game.setScreen(new MenuScreen(game));
+                    game.setScreen(new MenuScreen(game));
+
                 } catch (Exception ex) {
-                    error.setText("Error: " + ex.getMessage());
+                    error.setText("Fallo.");
                 }
             }
         });
@@ -169,7 +180,6 @@ public class LoginScreen extends BaseScreen {
         stage.setKeyboardFocus(user);
     }
 
-    // ===================== D I Á L O G O   C R E A R   U S U A R I O =====================
     private void createPlayerDialog() {
         final Dialog dialog = new Dialog("Crear jugador", skin);
         Table content = dialog.getContentTable();
@@ -201,7 +211,6 @@ public class LoginScreen extends BaseScreen {
         content.add(password).width(340f).row();
         content.add(error).left().row();
 
-        // Botones
         TextButton cancelBtn = new TextButton("Cancelar", skin);
         TextButton createBtn = new TextButton("Crear", skin);
 
@@ -223,15 +232,13 @@ public class LoginScreen extends BaseScreen {
                 }
 
                 try {
-                    // ¿Existe?
-                    String existente = com.elkinedwin.LogicaUsuario.ManejoArchivos.BuscarArchivoUsuario(u);
-                    if (existente != null) {
+                    String existe = com.elkinedwin.LogicaUsuario.ManejoArchivos.buscarArchivoUsuario(u);
+                    if (existe != null) {
                         error.setText("El usuario ya existe.");
                         return;
                     }
 
-                    // Crear e inicializar
-                    com.elkinedwin.LogicaUsuario.ManejoArchivos.InicializarUsuario(n, u, p);
+                    com.elkinedwin.LogicaUsuario.ManejoArchivos.crearUsuario(n, u, p);
 
                     dialog.hide();
                     new Dialog("Listo", skin)
@@ -240,7 +247,7 @@ public class LoginScreen extends BaseScreen {
                             .show(stage);
 
                 } catch (Exception ex) {
-                    error.setText("Error: " + ex.getMessage());
+                    error.setText("Fallo.");
                 }
             }
         });
@@ -253,7 +260,6 @@ public class LoginScreen extends BaseScreen {
         stage.setKeyboardFocus(user);
     }
 
-    // ===================== Skin (look & feel) =====================
     private Skin buildMinimalSkin() {
         Skin skin = new Skin();
 
@@ -298,7 +304,6 @@ public class LoginScreen extends BaseScreen {
         return skin;
     }
 
-    // ===================== Helpers =====================
     private TextField.TextFieldFilter onlyAlnumFilter() {
         return (textField, c) -> Character.isLetterOrDigit(c);
     }
@@ -307,4 +312,3 @@ public class LoginScreen extends BaseScreen {
         return s != null && s.matches("[A-Za-z0-9]+");
     }
 }
-

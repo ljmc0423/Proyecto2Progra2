@@ -5,77 +5,109 @@ import java.io.RandomAccessFile;
 
 public class LeerArchivo {
 
-    private static RandomAccessFile archivinho;
+    private static RandomAccessFile archivo;
 
-   public static void setArchivoLeer(RandomAccessFile archivoactivo){
-    
-    archivinho=archivoactivo;  
-   }
-    
-    public static void LeerUsuario() throws IOException {
-    archivinho.seek(149);
-    archivinho.readUTF();             
-    String datos = archivinho.readUTF();
+    private static boolean cacheLista = false;
+    private static String nombreCache = null;
+    private static String datosCache  = null;
 
-    StringBuilder usuario = new StringBuilder();
-    for (int i = 0; i < datos.length(); i++) {
-        char c = datos.charAt(i);
-        if (c == ',') break;           
-        usuario.append(c);
+    public static void usarArchivo(RandomAccessFile ref){
+        archivo = ref;
+        cacheLista = false;
+        nombreCache = null;
+        datosCache  = null;
     }
 
-   
-    ManejoUsuarios.UsuarioActivo.setUsuario(usuario.toString());
-}
+    public static void cargarUsuario() throws IOException{
+        if (archivo == null) throw new IOException("Archivo no listo.");
+        if (ManejoUsuarios.UsuarioActivo == null) throw new IOException("UsuarioActivo null.");
 
-
-    public static String LeerNombre() throws IOException {
-        archivinho.seek(149);
-        return archivinho.readUTF();
-
+        leerUsuario();
+        leerNombre();
+        leerContrasena();
+        leerPartidas();
+        leerAvatar();
+        leerCompletados();
+        leerMayorPuntuacion();
+        leerTiempoTotal();
+        leerPuntuacionGeneral();
+        leerPartidasTotales();
+        leerPartidasPorNivel();
+        leerConfiguracion();
+        leerTiempoPorNivel();
+        leerFechaRegistro();
+        leerUltimaSesion();
     }
 
-    public static void LeerPassword() throws IOException {
-
-    archivinho.seek(149);
-    archivinho.readUTF();
-    String datos = archivinho.readUTF();
-
-    String pass = "";
-    int comas = 0;
-    boolean leer = false;
-
-    for (int i = 0; i < datos.length(); i++) {
-        char c = datos.charAt(i);
-
-        if (c == ',') {
-            comas++;
-            if (comas == 1) {
-                leer = true;
-                continue;
-            }
-            if (comas == 2) {
-                leer = false;
-                break;
-            }
+    private static void cargarNombreYDatos() throws IOException {
+        if (cacheLista) return;
+        IOException fallo = null;
+        try {
+            archivo.seek(149);
+            String n = archivo.readUTF();
+            String d = archivo.readUTF();
+            nombreCache = n;
+            datosCache  = d;
+            cacheLista = true;
+            return;
+        } catch (IOException e) {
+            fallo = e;
         }
-
-        if (leer) {
-            pass += c;
+        try {
+            archivo.seek(147);
+            String n = archivo.readUTF();
+            String d = archivo.readUTF();
+            nombreCache = n;
+            datosCache  = d;
+            cacheLista = true;
+        } catch (IOException e2) {
+            throw new IOException("No se pudieron leer Nombre/Datos.", fallo);
         }
     }
 
-    
-    ManejoUsuarios.UsuarioActivo.setPassword(pass);
-}
+    public static void leerUsuario() throws IOException {
+        cargarNombreYDatos();
+        String datos = datosCache == null ? "" : datosCache;
+        StringBuilder u = new StringBuilder();
+        for (int i = 0; i < datos.length(); i++) {
+            char c = datos.charAt(i);
+            if (c == ',') break;
+            u.append(c);
+        }
+        ManejoUsuarios.UsuarioActivo.setUsuario(u.toString());
+    }
 
-public static void getPartidasArchivo() {
-    try {
-        archivinho.seek(149);
-        archivinho.readUTF();             
-        String datos = archivinho.readUTF(); 
+    public static String leerNombre() throws IOException {
+        cargarNombreYDatos();
+        String nombre = nombreCache == null ? "" : nombreCache;
+        ManejoUsuarios.UsuarioActivo.setNombre(nombre);
+        return nombre;
+    }
 
-       
+    public static void leerContrasena() throws IOException {
+        cargarNombreYDatos();
+        String datos = datosCache == null ? "" : datosCache;
+
+        String pass = "";
+        int comas = 0;
+        boolean leer = false;
+
+        for (int i = 0; i < datos.length(); i++) {
+            char c = datos.charAt(i);
+            if (c == ',') {
+                comas++;
+                if (comas == 1) { leer = true; continue; }
+                if (comas == 2) { leer = false; break; }
+            }
+            if (leer) pass += c;
+        }
+        ManejoUsuarios.UsuarioActivo.setContrasena(pass);
+    }
+
+    public static void leerPartidas() throws IOException {
+        cargarNombreYDatos();
+        String datos = datosCache == null ? "" : datosCache;
+
         String blob = "";
         int comas = 0;
         boolean leer = false;
@@ -83,21 +115,20 @@ public static void getPartidasArchivo() {
             char c = datos.charAt(i);
             if (c == ',') {
                 comas++;
-                if (comas == 2) { leer = true;  continue; } 
-                if (comas == 3) { leer = false; break; }   
+                if (comas == 2) { leer = true;  continue; }
+                if (comas == 3) { leer = false; break; }
             }
             if (leer) blob += c;
         }
         if (blob.isEmpty()) return;
 
-       
         String[] partes = blob.split(">");
         for (String p : partes) {
             if (p == null) continue;
             p = p.trim();
             if (p.isEmpty()) continue;
 
-            String[] a = p.split("\\."); 
+            String[] a = p.split("\\.");
             if (a.length < 4) continue;
 
             String fecha  = a[0];
@@ -108,18 +139,14 @@ public static void getPartidasArchivo() {
             try { tiempo   = Integer.parseInt(a[3].trim()); } catch (Exception ignored) {}
 
             try {
-                ManejoUsuarios.UsuarioActivo.historialpartidas.add(new Partida(fecha, intentos, logros, tiempo));
+                ManejoUsuarios.UsuarioActivo.historial.add(new Partida(fecha, intentos, logros, tiempo));
             } catch (Exception ignored) {}
         }
-    } catch (Exception e) {
-       
     }
-}
-public static void getImagenArchivo() {
-    try {
-        archivinho.seek(149);
-        archivinho.readUTF();           
-        String datos = archivinho.readUTF();
+
+    public static void leerAvatar() throws IOException {
+        cargarNombreYDatos();
+        String datos = datosCache == null ? "" : datosCache;
 
         String img = "";
         int comas = 0;
@@ -127,78 +154,80 @@ public static void getImagenArchivo() {
 
         for (int i = 0; i < datos.length(); i++) {
             char c = datos.charAt(i);
-
             if (c == ',') {
                 comas++;
-                if (comas == 3) { leer = true; continue; } // entre 3ra y 4ta coma
+                if (comas == 3) { leer = true; continue; }
                 if (comas == 4) { break; }
             }
-
             if (leer) img += c;
         }
+        ManejoUsuarios.UsuarioActivo.setAvatar(img);
+    }
 
-        ManejoUsuarios.UsuarioActivo.setImagen(img); 
-    } catch (Exception e) {
-        ManejoUsuarios.UsuarioActivo.setImagen("");
+    public static void leerCompletados() throws IOException{
+        archivo.seek(0);
+        for (int i = 1; i < 8; i++) {
+            ManejoUsuarios.UsuarioActivo.setNivelCompletado(i, archivo.readBoolean());
+        }
     }
-}
 
-public static void LeerCompletados() throws IOException{
-    archivinho.seek(0);
-    for (int i = 1; i < 8; i++) {
-    ManejoUsuarios.UsuarioActivo.setNivelCompletados(i,archivinho.readBoolean());
+    public static void leerMayorPuntuacion() throws IOException{
+        archivo.seek(7);
+        for (int i = 1; i < 8; i++) {
+            ManejoUsuarios.UsuarioActivo.setMayorPuntuacion(i, archivo.readInt());
+        }
     }
-   
-}
-public static void LeerMayorPuntuacion() throws IOException{
-archivinho.seek(7);
-    for (int i = 1; i < 8; i++) {
-    ManejoUsuarios.UsuarioActivo.setMayorPuntuacion(i, archivinho.readInt());
-    }
-}
-public static void LeerTiempototal() throws IOException{
-archivinho.seek(35);
-ManejoUsuarios.UsuarioActivo.setTiempoTJugado(archivinho.readInt());
-}
-public static void LeerPuntuaciongeneral() throws IOException{
-archivinho.seek(39);
-ManejoUsuarios.UsuarioActivo.setPuntuaciongeneral(archivinho.readInt());
-}
-public static void LeerPartidastotales() throws IOException{
-archivinho.seek(43);
-ManejoUsuarios.UsuarioActivo.setPartidastotales(archivinho.readInt());
-}
-public static void LeerPartidaspornivel() throws IOException{
-archivinho.seek(47);
-    for (int i = 1; i < 8; i++) {
-     ManejoUsuarios.UsuarioActivo.setPartidasnivel(1, archivinho.readInt());
-    }
-}
-public static void LeerConfiguraciones() throws IOException{
-archivinho.seek(77);
- ManejoUsuarios.UsuarioActivo.setConfiguracion("Volumen", archivinho.readInt());
- ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverArriba", archivinho.readInt());
- ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverAbajo", archivinho.readInt());
- ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverDere", archivinho.readInt());
- ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverIzq", archivinho.readInt());
- ManejoUsuarios.UsuarioActivo.setConfiguracion("Reiniciar", archivinho.readInt());
- archivinho.seek(129);
- ManejoUsuarios.UsuarioActivo.setConfiguracion("Idioma", archivinho.readInt());
 
-}
-public static void LeerTiempoxnivel() throws IOException{
-archivinho.seek(101);
-    for (int i = 1; i < 8; i++) {
-       ManejoUsuarios.UsuarioActivo.setTiempoxnivel(1, archivinho.readInt());
+    public static void leerTiempoTotal() throws IOException{
+        archivo.seek(35);
+        ManejoUsuarios.UsuarioActivo.setTiempoJugadoTotal(archivo.readInt());
     }
-}
-public static void LeerFechaRegistro() throws IOException{
-archivinho.seek(133);
-ManejoUsuarios.UsuarioActivo.setFecharegistro(archivinho.readLong());
-}
-public static void LeerUltimaSesion() throws IOException{
-archivinho.seek(141);
-ManejoUsuarios.UsuarioActivo.setUltimaSesion(archivinho.readLong());
-}
 
+    public static void leerPuntuacionGeneral() throws IOException{
+        archivo.seek(39);
+        ManejoUsuarios.UsuarioActivo.setPuntuacionGeneral(archivo.readInt());
+    }
+
+    public static void leerPartidasTotales() throws IOException{
+        archivo.seek(43);
+        ManejoUsuarios.UsuarioActivo.setPartidasTotales(archivo.readInt());
+    }
+
+    public static void leerPartidasPorNivel() throws IOException{
+        archivo.seek(47);
+        for (int i = 1; i < 8; i++) {
+            ManejoUsuarios.UsuarioActivo.setPartidasPorNivel(i, archivo.readInt());
+        }
+    }
+
+    public static void leerConfiguracion() throws IOException{
+        archivo.seek(77);
+        ManejoUsuarios.UsuarioActivo.setConfiguracion("Volumen", archivo.readInt());
+        ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverArriba", archivo.readInt());
+        ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverAbajo", archivo.readInt());
+        ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverDere", archivo.readInt());
+        ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverIzq", archivo.readInt());
+        ManejoUsuarios.UsuarioActivo.setConfiguracion("Reiniciar", archivo.readInt());
+        archivo.seek(129);
+        ManejoUsuarios.UsuarioActivo.setConfiguracion("Idioma", archivo.readInt());
+    }
+
+    public static void leerTiempoPorNivel() throws IOException{
+        archivo.seek(101);
+        for (int i = 1; i < 8; i++) {
+            ManejoUsuarios.UsuarioActivo.setTiempoPorNivel(i, archivo.readInt());
+        }
+    }
+
+    public static void leerFechaRegistro() throws IOException{
+        archivo.seek(133);
+        ManejoUsuarios.UsuarioActivo.setFechaRegistro(archivo.readLong());
+    }
+
+    public static void leerUltimaSesion() throws IOException{
+        archivo.seek(141);
+        long t = archivo.readLong();
+        ManejoUsuarios.UsuarioActivo.setUltimaSesion(t);
+        ManejoUsuarios.UsuarioActivo.sesionAnterior = t;
+    }
 }
