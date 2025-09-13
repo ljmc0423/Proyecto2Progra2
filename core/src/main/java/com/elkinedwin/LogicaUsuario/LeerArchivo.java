@@ -7,15 +7,8 @@ public class LeerArchivo {
 
     private static RandomAccessFile archivo;
 
-    private static boolean cacheLista = false;
-    private static String nombreCache = null;
-    private static String datosCache  = null;
-
     public static void usarArchivo(RandomAccessFile ref){
         archivo = ref;
-        cacheLista = false;
-        nombreCache = null;
-        datosCache  = null;
     }
 
     public static void cargarUsuario() throws IOException{
@@ -39,35 +32,12 @@ public class LeerArchivo {
         leerUltimaSesion();
     }
 
-    private static void cargarNombreYDatos() throws IOException {
-        if (cacheLista) return;
-        IOException fallo = null;
-        try {
-            archivo.seek(149);
-            String n = archivo.readUTF();
-            String d = archivo.readUTF();
-            nombreCache = n;
-            datosCache  = d;
-            cacheLista = true;
-            return;
-        } catch (IOException e) {
-            fallo = e;
-        }
-        try {
-            archivo.seek(147);
-            String n = archivo.readUTF();
-            String d = archivo.readUTF();
-            nombreCache = n;
-            datosCache  = d;
-            cacheLista = true;
-        } catch (IOException e2) {
-            throw new IOException("No se pudieron leer Nombre/Datos.", fallo);
-        }
-    }
+  
 
     public static void leerUsuario() throws IOException {
-        cargarNombreYDatos();
-        String datos = datosCache == null ? "" : datosCache;
+        archivo.seek(149);
+        archivo.readUTF();                 
+        String datos = archivo.readUTF();  
         StringBuilder u = new StringBuilder();
         for (int i = 0; i < datos.length(); i++) {
             char c = datos.charAt(i);
@@ -78,35 +48,35 @@ public class LeerArchivo {
     }
 
     public static String leerNombre() throws IOException {
-        cargarNombreYDatos();
-        String nombre = nombreCache == null ? "" : nombreCache;
+        archivo.seek(149);
+        String nombre = archivo.readUTF(); 
         ManejoUsuarios.UsuarioActivo.setNombre(nombre);
         return nombre;
     }
 
     public static void leerContrasena() throws IOException {
-        cargarNombreYDatos();
-        String datos = datosCache == null ? "" : datosCache;
+        archivo.seek(149);
+        archivo.readUTF();                
+        String datos = archivo.readUTF();
 
         String pass = "";
         int comas = 0;
         boolean leer = false;
-
         for (int i = 0; i < datos.length(); i++) {
             char c = datos.charAt(i);
             if (c == ',') {
                 comas++;
                 if (comas == 1) { leer = true; continue; }
-                if (comas == 2) { leer = false; break; }
-            }
-            if (leer) pass += c;
+                if (comas == 2) { break; }
+            } else if (leer) pass += c;
         }
         ManejoUsuarios.UsuarioActivo.setContrasena(pass);
     }
 
     public static void leerPartidas() throws IOException {
-        cargarNombreYDatos();
-        String datos = datosCache == null ? "" : datosCache;
+        archivo.seek(149);
+        archivo.readUTF();                 
+        String datos = archivo.readUTF();  
 
         String blob = "";
         int comas = 0;
@@ -115,10 +85,11 @@ public class LeerArchivo {
             char c = datos.charAt(i);
             if (c == ',') {
                 comas++;
-                if (comas == 2) { leer = true;  continue; }
-                if (comas == 3) { leer = false; break; }
-            }
-            if (leer) blob += c;
+                if (comas == 2) { 
+                    leer = true;  
+                    continue; }
+                if (comas == 3) { break; }
+            } else if (leer) blob += c;
         }
         if (blob.isEmpty()) return;
 
@@ -145,24 +116,25 @@ public class LeerArchivo {
     }
 
     public static void leerAvatar() throws IOException {
-        cargarNombreYDatos();
-        String datos = datosCache == null ? "" : datosCache;
+        archivo.seek(149);
+        archivo.readUTF();                
+        String datos = archivo.readUTF();  
 
         String img = "";
         int comas = 0;
         boolean leer = false;
-
         for (int i = 0; i < datos.length(); i++) {
             char c = datos.charAt(i);
             if (c == ',') {
                 comas++;
                 if (comas == 3) { leer = true; continue; }
                 if (comas == 4) { break; }
-            }
-            if (leer) img += c;
+            } else if (leer) img += c;
         }
         ManejoUsuarios.UsuarioActivo.setAvatar(img);
     }
+
+    
 
     public static void leerCompletados() throws IOException{
         archivo.seek(0);

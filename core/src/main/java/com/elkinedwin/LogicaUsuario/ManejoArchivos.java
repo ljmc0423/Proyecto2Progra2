@@ -28,8 +28,8 @@ public class ManejoArchivos {
     }
 
     /*
-    Formato (offsets):
-    0..6  : boolean[7] niveles completados
+    Formato:
+    0-6  : boolean[7] niveles completados
     7     : int[7]  MayorPuntuacion
     35    : int     TiempoTotalJugado
     39    : int     PuntuacionGeneral
@@ -43,6 +43,7 @@ public class ManejoArchivos {
     141   : long    UltimaSesion (siempre la ANTERIOR)
     149   : UTF     Nombre
            UTF     Datos: "Usuario,Password,Partidas(Fecha.Intentos.Logros.Tiempo[>...]),ImagenPath,"
+           (ImagenPath por defecto: ../Imagenes/Ulogo.png)
     */
     public static void crearUsuario(String nombre, String usuario, String contrasena) throws IOException {
         asegurarCarpeta();
@@ -83,14 +84,16 @@ public class ManejoArchivos {
         f.seek(149);
         f.writeUTF(nombre == null ? "" : nombre);
 
+        String imgDefecto = "../Imagenes/Ulogo.png";
         StringBuilder datos = new StringBuilder();
         datos.append(usuario == null ? "" : usuario).append(',')
              .append(contrasena == null ? "" : contrasena).append(',')
              .append("...").append(',')
-             .append("").append(',');
+             .append(imgDefecto).append(',');
         f.writeUTF(datos.toString());
 
         ManejoUsuarios.UsuarioActivo = new Usuario(usuario, nombre, contrasena, ahora);
+        ManejoUsuarios.UsuarioActivo.setAvatar(imgDefecto);
     }
 
     public static String buscarArchivoUsuario(String usuario) {
