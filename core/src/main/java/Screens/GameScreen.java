@@ -29,9 +29,11 @@ public final class GameScreen implements Screen {
     private FitViewport viewport;
     private SpriteBatch batch;
 
+    //clase concreta de game
     private final SokobanGame game = new SokobanGame();
+    
+    //lógica de movimiento
     private final MoveApplier applier = new MoveApplier();
-
     private final SharedMovement shared = new SharedMovement();
     private final BlockingQueue<Directions> directionQueue = new ArrayBlockingQueue<>(3);
     private final MovementThread movementThreadLogic = new MovementThread(shared, directionQueue);
@@ -48,6 +50,7 @@ public final class GameScreen implements Screen {
     private Directions facing = Directions.DOWN; //por default, ve hacia abajo
     private float playerRatio = 1f;
 
+    //el entremedio de una casilla a otra a la hora de animar (para que se vea bien el movimiento)
     private boolean tweenActive = false;
     private float tweenTime = 0f;
     private final float tweenDuration = 0.165f;
@@ -214,16 +217,16 @@ public final class GameScreen implements Screen {
         return null;
     }
 
-    private void enqueueDirection(Directions dir) {
+    private void enqueueDirection(Directions direction) {
         if (directionQueue.size() >= 1) {
             return;
         }
-        facing = dir;
+        facing = direction;
         movementThreadLogic.updateCopies(
                 MapCopy.copy(game.getMap()),
                 game.getPlayer().getPosition()
         );
-        directionQueue.offer(dir);
+        directionQueue.offer(direction);
     }
 
     private void drawMap() {

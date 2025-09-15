@@ -29,7 +29,7 @@ public class LevelLoader {
                         ch = (ch == TileMap.PLAYER_ON_TARGET) ? TileMap.TARGET : TileMap.FLOOR;
                     }
 
-                    data[y][x] = ch;
+                    data[y][x] = ch; //importante: como empieza desde el principio al final el mapa queda volteado
                 }
             }
         }

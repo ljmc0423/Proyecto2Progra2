@@ -2,7 +2,7 @@ package GameLogic;
 
 public class TileMap {
 
-    private char grid[][] = new char[GameConfig.ROWS][GameConfig.COLS];
+    private char tileMap[][] = new char[GameConfig.ROWS][GameConfig.COLS];
 
     public static final char WALL = '#';
     public static final char FLOOR = '.';
@@ -12,8 +12,8 @@ public class TileMap {
     public static final char BOX_ON_TARGET = '*';
     public static final char PLAYER_ON_TARGET = '&';
 
-    public TileMap(char grid[][]) {
-        this.grid = grid;
+    public TileMap(char tileMap[][]) {
+        this.tileMap = tileMap;
     }
 
     public int getMapWidth() {
@@ -29,11 +29,11 @@ public class TileMap {
     }
 
     public char getTile(int x, int y) {
-        return grid[y][x];
+        return tileMap[y][x];
     }
 
     public void setTile(int x, int y, char ch) {
-        grid[y][x] = ch;
+        tileMap[y][x] = ch;
     }
 
     public boolean isBox(char ch) {
