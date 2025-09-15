@@ -359,7 +359,6 @@ public final class GameScreen implements Screen {
     }
 
     private void drawHUD() {
-        // Texto simple arriba-izquierda
         int moves = game.getPlayer().getMoveCount();
         int pushes = game.getPlayer().getPushCount();
 
