@@ -1,4 +1,3 @@
-// ======= Screens/GameScreen.java =======
 package Screens;
 
 import GameLogic.Directions;
@@ -30,8 +29,11 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 
 import com.elkinedwin.LogicaUsuario.ManejoUsuarios;
+
 public final class GameScreen implements Screen {
 
     //Clases de libgdx
@@ -65,6 +67,8 @@ public final class GameScreen implements Screen {
 
     //fuente
     private BitmapFont font;
+    private FreeTypeFontGenerator generator;
+    private FreeTypeFontParameter parameter;
 
     private Directions facing = Directions.DOWN; //por default, ve hacia abajo
     private float playerRatio = 1f;
@@ -81,8 +85,11 @@ public final class GameScreen implements Screen {
     private Directions heldDirection = null;
     private float holdTimer = 0f;
 
+    //tiempo transcurrido
+    private float timeChronometer;
+
     //nivel actual
-    private int level = 1;
+    private int level = 2;
 
     @Override
     public void show() {
@@ -96,8 +103,14 @@ public final class GameScreen implements Screen {
         movementThread = new Thread(movementThreadLogic);
         movementThread.start();
 
-        font = new BitmapFont();
-        font.setColor(Color.WHITE);
+        generator = new FreeTypeFontGenerator(files.internal("fonts/pokemon_fire_red.ttf"));
+        parameter = new FreeTypeFontParameter();
+        parameter.size = 20; // tamaño de la fuente en px
+        parameter.color = Color.WHITE;
+        parameter.borderWidth = 1;
+        parameter.borderColor = Color.BLACK;
+        font = generator.generateFont(parameter);
+        generator.dispose();
 
         floorTexture = load("textures/floor.png");
         wallTexture = load("textures/wall.png");
@@ -125,16 +138,13 @@ public final class GameScreen implements Screen {
         boxPlacedSound = loadSound("audios/box_placed.wav");
         resetLevelSound = loadSound("audios/reset_level.wav");
 
-
         //el sprite del player no es 16*16
-
         bgMusic = audio.newMusic(files.internal("audios/levelSong.mp3"));
         bgMusic.setLooping(true);
         bgMusic.setVolume(0.25f); //0.25 para que no le quite protagonismo a los otros efectos de sonidos
         bgMusic.play();
 
         //esto es importante, pues el sprite del player no es 16*16
-
         playerRatio = (float) downIdle.getHeight() / downIdle.getWidth();
     }
 
@@ -148,6 +158,7 @@ public final class GameScreen implements Screen {
 
     @Override
     public void render(float delta) {
+        timeChronometer += delta;
         updateContinuousInput(delta);
 
         applyMoveResult();
@@ -207,6 +218,7 @@ public final class GameScreen implements Screen {
         if (input.isKeyJustPressed(reiniciarKey)) {
             resetLevelSound.play(1.0f);
             game.startLevel(level);
+            timeChronometer = 0f;
             tweenActive = false;
         }
     }
@@ -250,17 +262,24 @@ public final class GameScreen implements Screen {
         }
     }
 
-    // === AHORA lee las teclas según el HashMap del usuario activo ===
     private Directions readHeldDirection() {
-        int kUp    = getCfgKey("MoverArriba", UP);
-        int kDown  = getCfgKey("MoverAbajo",  DOWN);
-        int kLeft  = getCfgKey("MoverIzq",    LEFT);
-        int kRight = getCfgKey("MoverDer",    RIGHT);
+        int kUp = getCfgKey("MoverArriba", UP);
+        int kDown = getCfgKey("MoverAbajo", DOWN);
+        int kLeft = getCfgKey("MoverIzq", LEFT);
+        int kRight = getCfgKey("MoverDer", RIGHT);
 
-        if (input.isKeyPressed(kUp))    return Directions.UP;
-        if (input.isKeyPressed(kDown))  return Directions.DOWN;
-        if (input.isKeyPressed(kLeft))  return Directions.LEFT;
-        if (input.isKeyPressed(kRight)) return Directions.RIGHT;
+        if (input.isKeyPressed(kUp)) {
+            return Directions.UP;
+        }
+        if (input.isKeyPressed(kDown)) {
+            return Directions.DOWN;
+        }
+        if (input.isKeyPressed(kLeft)) {
+            return Directions.LEFT;
+        }
+        if (input.isKeyPressed(kRight)) {
+            return Directions.RIGHT;
+        }
 
         return null;
     }
@@ -269,9 +288,12 @@ public final class GameScreen implements Screen {
         try {
             if (ManejoUsuarios.UsuarioActivo != null && ManejoUsuarios.UsuarioActivo.configuracion != null) {
                 Integer v = ManejoUsuarios.UsuarioActivo.configuracion.get(name);
-                if (v != null && v != 0) return v;
+                if (v != null && v != 0) {
+                    return v;
+                }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return def;
     }
 
@@ -341,8 +363,15 @@ public final class GameScreen implements Screen {
         int moves = game.getPlayer().getMoveCount();
         int pushes = game.getPlayer().getPushCount();
 
-        font.setColor(Color.WHITE);
-        font.draw(batch, "Nivel " + level + "  Pasos: " + moves + "  Empujes: " + pushes,
+        int totalSeconds = (int) timeChronometer;
+        int minutes = totalSeconds / 60;
+        int seconds = totalSeconds % 60;
+        String timeStr = String.format("%02d:%02d", minutes, seconds);
+
+        font.draw(batch, "Nivel " + level
+                + "  Pasos: " + moves
+                + "  Empujes: " + pushes
+                + "  Tiempo: " + timeStr,
                 6, GameConfig.PX_HEIGHT - 6);
     }
 
