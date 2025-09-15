@@ -20,7 +20,7 @@ public final class SokobanGame extends Game {
             this.player = new Player(data.getPlayerInitialPosition());
             this.victory = checkVictory();
         } catch (IOException e) {
-            throw new RuntimeException("Error cargando nivel: " + path, e); //para debug
+            throw new RuntimeException("Error cargando nivel: " + path, e); 
         }
     }
 

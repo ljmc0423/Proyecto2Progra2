@@ -22,3 +22,4 @@ public class Position {
         return new Position(x + dx, y + dy);
     }
 }
+

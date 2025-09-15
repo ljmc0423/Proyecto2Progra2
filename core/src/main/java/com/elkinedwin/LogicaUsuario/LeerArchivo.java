@@ -177,7 +177,7 @@ public class LeerArchivo {
         ManejoUsuarios.UsuarioActivo.setConfiguracion("Volumen", archivo.readInt());
         ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverArriba", archivo.readInt());
         ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverAbajo", archivo.readInt());
-        ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverDere", archivo.readInt());
+        ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverDer", archivo.readInt());
         ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverIzq", archivo.readInt());
         ManejoUsuarios.UsuarioActivo.setConfiguracion("Reiniciar", archivo.readInt());
         archivo.seek(129);

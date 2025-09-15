@@ -1,3 +1,4 @@
+// ======= Screens/GameScreen.java =======
 package Screens;
 
 import GameLogic.Directions;
@@ -10,8 +11,10 @@ import GameLogic.SharedMovement;
 import GameLogic.SokobanGame;
 import GameLogic.TileMap;
 import GameLogic.Type;
+
 import static com.badlogic.gdx.Gdx.audio;
 import static com.badlogic.gdx.Gdx.files;
+
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -22,17 +25,19 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import static com.badlogic.gdx.Gdx.input;
 import static com.badlogic.gdx.Input.Keys.*;
 import com.badlogic.gdx.audio.Sound;
+
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
+import com.elkinedwin.LogicaUsuario.ManejoUsuarios;
 public final class GameScreen implements Screen {
 
-    //Clases de libgdx para que se visualize correctamente en la pantalla todo
+    //Clases de libgdx
     private OrthographicCamera camera;
     private FitViewport viewport;
     private SpriteBatch batch;
 
-    //clase concreta de game
+    //juego
     private final SokobanGame game = new SokobanGame();
 
     //lógica de movimiento
@@ -44,7 +49,7 @@ public final class GameScreen implements Screen {
 
     private Texture floorTexture, wallTexture, boxTexture, boxTexturePlaced, targetTexture;
 
-    //frames para animación
+    //frames
     private Texture downWalk1, downIdle, downWalk2;
     private Texture upWalk1, upIdle, upWalk2;
     private Texture leftWalk1, leftIdle, leftWalk2;
@@ -58,7 +63,7 @@ public final class GameScreen implements Screen {
     private Directions facing = Directions.DOWN; //por default, ve hacia abajo
     private float playerRatio = 1f;
 
-    //el entremedio de una casilla a otra a la hora de animar (para que se vea bien el movimiento)
+    //tween
     private boolean tweenActive = false;
     private float tweenTime = 0f;
     private final float tweenDuration = 0.165f;
@@ -111,7 +116,7 @@ public final class GameScreen implements Screen {
         boxPlacedSound = loadSound("audios/box_placed.wav");
         resetLevelSound = loadSound("audios/reset_level.wav");
 
-        //esto es importante, pues el sprite del player no es 16*16
+        //el sprite del player no es 16*16
         playerRatio = (float) downIdle.getHeight() / downIdle.getWidth();
     }
 
@@ -179,7 +184,8 @@ public final class GameScreen implements Screen {
     }
 
     private void resetLevel() {
-        if (input.isKeyJustPressed(R)) {
+        int reiniciarKey = getCfgKey("Reiniciar", R);
+        if (input.isKeyJustPressed(reiniciarKey)) {
             resetLevelSound.play(1.0f);
             game.startLevel(level);
             tweenActive = false;
@@ -225,20 +231,29 @@ public final class GameScreen implements Screen {
         }
     }
 
+    // === AHORA lee las teclas según el HashMap del usuario activo ===
     private Directions readHeldDirection() {
-        if (input.isKeyPressed(UP)) {
-            return Directions.UP;
-        }
-        if (input.isKeyPressed(DOWN)) {
-            return Directions.DOWN;
-        }
-        if (input.isKeyPressed(LEFT)) {
-            return Directions.LEFT;
-        }
-        if (input.isKeyPressed(RIGHT)) {
-            return Directions.RIGHT;
-        }
+        int kUp    = getCfgKey("MoverArriba", UP);
+        int kDown  = getCfgKey("MoverAbajo",  DOWN);
+        int kLeft  = getCfgKey("MoverIzq",    LEFT);
+        int kRight = getCfgKey("MoverDer",    RIGHT);
+
+        if (input.isKeyPressed(kUp))    return Directions.UP;
+        if (input.isKeyPressed(kDown))  return Directions.DOWN;
+        if (input.isKeyPressed(kLeft))  return Directions.LEFT;
+        if (input.isKeyPressed(kRight)) return Directions.RIGHT;
+
         return null;
+    }
+
+    private int getCfgKey(String name, int def) {
+        try {
+            if (ManejoUsuarios.UsuarioActivo != null && ManejoUsuarios.UsuarioActivo.configuracion != null) {
+                Integer v = ManejoUsuarios.UsuarioActivo.configuracion.get(name);
+                if (v != null && v != 0) return v;
+            }
+        } catch (Exception ignored) {}
+        return def;
     }
 
     private void enqueueDirection(Directions direction) {
