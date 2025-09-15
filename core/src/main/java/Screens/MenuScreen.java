@@ -8,6 +8,11 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 
+// Guardado / usuarios
+import com.elkinedwin.LogicaUsuario.ArchivoGuardar;
+import com.elkinedwin.LogicaUsuario.ManejoArchivos;
+import com.elkinedwin.LogicaUsuario.ManejoUsuarios;
+
 public class MenuScreen extends BaseScreen {
 
     private final Game game;
@@ -64,10 +69,20 @@ public class MenuScreen extends BaseScreen {
             }
         });
 
+       
         exitImg.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
-                app.exit();
+                try {
+                    ArchivoGuardar.setArchivo(ManejoArchivos.archivoAbierto);
+                    ArchivoGuardar.guardarTodoCerrarSesion();
+                } catch (Exception ex) {
+                   
+                } finally {
+                   
+                    ManejoUsuarios.UsuarioActivo = null;
+                    game.setScreen(new LoginScreen(game));
+                }
             }
         });
 
@@ -97,3 +112,4 @@ public class MenuScreen extends BaseScreen {
         exitTex.dispose();
     }
 }
+

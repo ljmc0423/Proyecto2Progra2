@@ -8,7 +8,7 @@ public class Lwjgl3Launcher {
 
     public static void main(String[] args) {
         createApplication();
-    } 
+    }
 
     private static Lwjgl3Application createApplication() {
         return new Lwjgl3Application(new SokobanMain(), getDefaultConfiguration());
@@ -19,7 +19,7 @@ public class Lwjgl3Launcher {
         configuration.setTitle("Sokoban");
         configuration.useVsync(true);
         configuration.setForegroundFPS(
-                Lwjgl3ApplicationConfiguration.getDisplayMode().refreshRate); 
+                Lwjgl3ApplicationConfiguration.getDisplayMode().refreshRate);
 
         configuration.setWindowedMode(1536, 864);
 

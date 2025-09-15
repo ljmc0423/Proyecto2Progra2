@@ -7,7 +7,7 @@ public class ArchivoGuardar {
 
     private static RandomAccessFile archivo;
 
-    public static void usarArchivo(RandomAccessFile ref){
+    public static void setArchivo(RandomAccessFile ref){
         archivo = ref;
     }
 
@@ -53,8 +53,11 @@ public class ArchivoGuardar {
         int vol       = ManejoUsuarios.UsuarioActivo.getConfiguracion("Volumen");
         int arriba    = ManejoUsuarios.UsuarioActivo.getConfiguracion("MoverArriba");
         int abajo     = ManejoUsuarios.UsuarioActivo.getConfiguracion("MoverAbajo");
+
+      
         int derecha   = ManejoUsuarios.UsuarioActivo.getConfiguracion("MoverDere");
         if (derecha == 0) derecha = ManejoUsuarios.UsuarioActivo.getConfiguracion("MoverDer");
+
         int izquierda = ManejoUsuarios.UsuarioActivo.getConfiguracion("MoverIzq");
         int reiniciar = ManejoUsuarios.UsuarioActivo.getConfiguracion("Reiniciar");
 
@@ -65,6 +68,7 @@ public class ArchivoGuardar {
         archivo.writeInt(izquierda);
         archivo.writeInt(reiniciar);
 
+        
         archivo.seek(129);
         archivo.writeInt(ManejoUsuarios.UsuarioActivo.getConfiguracion("Idioma"));
     }
@@ -76,10 +80,12 @@ public class ArchivoGuardar {
         }
     }
 
+    
     public static void guardarFechas() throws IOException{
         archivo.seek(133);
         long reg = ManejoUsuarios.UsuarioActivo.getFechaRegistro() == null ? 0L : ManejoUsuarios.UsuarioActivo.getFechaRegistro();
         archivo.writeLong(reg);
+
         archivo.seek(141);
         Long anterior = ManejoUsuarios.UsuarioActivo.sesionAnterior;
         if (anterior == null) anterior = ManejoUsuarios.UsuarioActivo.getUltimaSesion();
@@ -87,11 +93,14 @@ public class ArchivoGuardar {
         archivo.writeLong(anterior);
     }
 
+  
     public static void guardarDatosUTF() throws IOException {
         archivo.seek(149);
 
+        
         archivo.writeUTF(ManejoUsuarios.UsuarioActivo.getNombre());
 
+        
         StringBuilder datos = new StringBuilder();
 
         String usuario  = ManejoUsuarios.UsuarioActivo.getUsuario();
@@ -102,6 +111,7 @@ public class ArchivoGuardar {
              .append(pass == null ? "" : pass)
              .append(',');
 
+        
         if (ManejoUsuarios.UsuarioActivo.historial == null ||
             ManejoUsuarios.UsuarioActivo.historial.isEmpty()) {
             datos.append("...");
@@ -126,10 +136,41 @@ public class ArchivoGuardar {
         }
 
         datos.append(',');
+
+        
         String imgPath = ManejoUsuarios.UsuarioActivo.avatar;
         datos.append(imgPath == null ? "" : imgPath)
              .append(',');
 
         archivo.writeUTF(datos.toString());
+    }
+
+    
+    public static void guardarTodo() throws IOException {
+        if (archivo == null) throw new IOException("Archivo no listo.");
+
+        guardarNivelesCompletados();
+        guardarMayorPuntuacion();
+        guardarTiempoTotal();
+        guardarPuntuacionGeneral();
+        guardarTotalPartidas();
+        guardarPartidasPorNivel();
+        guardarConfiguracion();
+        guardarTiempoPorNivel();
+        guardarFechas();      
+        guardarDatosUTF();
+    }
+
+    
+    public static void guardarTodoCerrarSesion() throws IOException {
+        if (archivo == null) throw new IOException("Archivo no listo.");
+
+        if (ManejoUsuarios.UsuarioActivo != null) {
+            Long actual = ManejoUsuarios.UsuarioActivo.sesionActual;
+            if (actual == null) actual = System.currentTimeMillis();
+            ManejoUsuarios.UsuarioActivo.sesionAnterior = actual;
+        }
+
+        guardarTodo();
     }
 }

@@ -158,7 +158,7 @@ public class LoginScreen extends BaseScreen {
                     com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo.sesionAnterior = anterior;
                     com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo.sesionActual = System.currentTimeMillis();
 
-                    com.elkinedwin.LogicaUsuario.ArchivoGuardar.usarArchivo(
+                    com.elkinedwin.LogicaUsuario.ArchivoGuardar.setArchivo(
                             com.elkinedwin.LogicaUsuario.ManejoArchivos.archivoAbierto
                     );
                     com.elkinedwin.LogicaUsuario.ArchivoGuardar.guardarFechas();
