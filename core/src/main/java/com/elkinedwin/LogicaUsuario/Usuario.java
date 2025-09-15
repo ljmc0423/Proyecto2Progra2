@@ -54,8 +54,8 @@ public class Usuario {
         configuracion.put("Volumen", 80);
         configuracion.put("MoverArriba", 19);
         configuracion.put("MoverAbajo", 20);
-        configuracion.put("MoverDer", 21);
-        configuracion.put("MoverIzq", 22);
+        configuracion.put("MoverDer", 22);
+        configuracion.put("MoverIzq", 21);
         configuracion.put("Reiniciar", 46);
         configuracion.put("Idioma", 1);
 

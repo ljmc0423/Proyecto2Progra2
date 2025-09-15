@@ -68,8 +68,8 @@ public class ManejoArchivos {
         f.seek(81);
         f.writeInt(19);
         f.writeInt(20);
-        f.writeInt(21);
         f.writeInt(22);
+        f.writeInt(21);
         f.writeInt(46);
 
         f.seek(101);
