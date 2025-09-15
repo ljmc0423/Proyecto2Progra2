@@ -4,8 +4,8 @@ import com.badlogic.gdx.utils.TimeUtils;
 
 public final class Time {
 
-    private long startedMs = 0;
-    private long accumulatedMs = 0;
+    private long startedMs = 0L;
+    private long accumulatedMs = 0L;
     private boolean running = false;
 
     public synchronized void start() {
@@ -36,10 +36,7 @@ public final class Time {
     }
 
     public synchronized long elapsedMs() {
-        if (!running) {
-            return accumulatedMs;
-        }
-        return accumulatedMs + (TimeUtils.millis() - startedMs);
+        return running ? accumulatedMs + (TimeUtils.millis() - startedMs) : accumulatedMs;
     }
 
     public synchronized String mmss() {

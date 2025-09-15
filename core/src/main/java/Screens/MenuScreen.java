@@ -8,8 +8,6 @@ import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 
-import GameLogic.SokobanGame;
-
 public class MenuScreen extends BaseScreen {
 
     private final Game game;
@@ -40,7 +38,7 @@ public class MenuScreen extends BaseScreen {
         playImg.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
-                game.setScreen(new GameScreen(new SokobanGame()));
+                game.setScreen(new GameScreen());
             }
         });
 

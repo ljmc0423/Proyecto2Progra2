@@ -4,34 +4,36 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.ArrayList;
 
 public class LevelLoader {
 
-    private final File level;
+    private final File levelFile;
 
-    public LevelLoader(String ruta) {
-        this.level = new File(ruta);
+    public LevelLoader(String path) {
+        this.levelFile = new File(path);
     }
 
-    public char[][] LevelCharData() {
-        if (!level.exists()) return null;
+    public LevelData load() throws IOException {
+        char[][] data = new char[GameConfig.ROWS][GameConfig.COLS];
+        Position start = null;
 
-        ArrayList<char[]> filas = new ArrayList<>();
+        try (BufferedReader br = new BufferedReader(new FileReader(levelFile))) {
+            for (int y = 0; y < GameConfig.ROWS; y++) {
+                String line = br.readLine();
 
-        try (BufferedReader br = new BufferedReader(new FileReader(level))) {
-            String linea;
-            while ((linea = br.readLine()) != null) {
-                filas.add(linea.toCharArray());
+                for (int x = 0; x < GameConfig.COLS; x++) {
+                    char ch = line.charAt(x);
+
+                    if (ch == TileMap.PLAYER || ch == TileMap.PLAYER_ON_TARGET) {
+                        start = new Position(x, y);
+                        ch = (ch == TileMap.PLAYER_ON_TARGET) ? TileMap.TARGET : TileMap.FLOOR;
+                    }
+
+                    data[y][x] = ch;
+                }
             }
-        } catch (IOException e) {
-            return null;
         }
 
-        char data[][] = new char[filas.size()][];
-        for (int i = 0; i < filas.size(); i++) {
-            data[i] = filas.get(i);
-        }
-        return data;
-    } //importante: el mapa se lee al revés
+        return new LevelData(new TileMap(data), start);
+    }
 }

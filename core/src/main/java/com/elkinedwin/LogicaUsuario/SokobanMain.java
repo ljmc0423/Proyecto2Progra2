@@ -1,12 +1,12 @@
 package com.elkinedwin.LogicaUsuario;
 
 import com.badlogic.gdx.Game;
-import Screens.LoginScreen;
+import Screens.GameScreen;
 
 public class SokobanMain extends Game {
 
     @Override
     public void create() {
-        setScreen(new LoginScreen(this));
+        setScreen(new GameScreen());
     }
 }

@@ -1,231 +1,337 @@
 package Screens;
 
+import GameLogic.Directions;
+import GameLogic.GameConfig;
+import GameLogic.MapCopy;
+import GameLogic.MoveApplier;
+import GameLogic.MoveResult;
+import GameLogic.MovementThread;
+import GameLogic.SharedMovement;
+import GameLogic.SokobanGame;
+import GameLogic.TileMap;
+import static com.badlogic.gdx.Gdx.files;
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.utils.viewport.FitViewport;
-
-import GameLogic.GameConfig;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.FitViewport;
+import static com.badlogic.gdx.Gdx.input;
+import static com.badlogic.gdx.Input.Keys.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import GameLogic.Directions;
-import GameLogic.LevelLoader;
-import GameLogic.MoveLogic;
-import GameLogic.TileMap;
-import static com.badlogic.gdx.Gdx.input;
-import com.badlogic.gdx.Input;
-import com.badlogic.gdx.graphics.g2d.Sprite;
-import GameLogic.Time;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import GameLogic.Juego;
 
-public class GameScreen implements Screen {
+public final class GameScreen implements Screen {
 
-    //gráficos
+    //Clases de libgdx para que se visualize correctamente en la pantalla todo
     private OrthographicCamera camera;
     private FitViewport viewport;
     private SpriteBatch batch;
-    private BitmapFont uiFont;
 
-    //assets
-    private Texture floorTexture;
-    private Texture wallTexture;
-    private Texture boxTexture;
-    private Texture playerTexture;
-    private Texture boxPlacedTexture;
-    private Texture targetTexture;
-    private Sprite playerSprite;
+    private final SokobanGame game = new SokobanGame();
+    private final MoveApplier applier = new MoveApplier();
 
-    //Clases e hilos
-    private BlockingQueue<Directions> moves;
-    private MoveLogic moveLogic;
-    private Thread logicThread;
-    private TileMap tileMap;
+    private final SharedMovement shared = new SharedMovement();
+    private final BlockingQueue<Directions> directionQueue = new ArrayBlockingQueue<>(3);
+    private final MovementThread movementThreadLogic = new MovementThread(shared, directionQueue);
+    private Thread movementThread;
 
-    //tiempo
-    private Time time;
+    private Texture floorTexture, wallTexture, boxTexture, boxTexturePlaced, targetTexture;
 
-    private final Juego juego;
+    //frames para animación
+    private Texture downWalk1, downIdle, downWalk2;
+    private Texture upWalk1, upIdle, upWalk2;
+    private Texture leftWalk1, leftIdle, leftWalk2;
+    private Texture rightWalk1, rightIdle, rightWalk2;
 
-    private boolean levelCompleted = false;
+    private Directions facing = Directions.DOWN; //por default, ve hacia abajo
+    private float playerRatio = 1f;
 
-    public GameScreen(Juego juego) {
-        this.juego = juego;
-    }
+    private boolean tweenActive = false;
+    private float tweenTime = 0f;
+    private final float tweenDuration = 0.165f;
+    private float spriteXStart, spriteYStart;
+    private float spriteXEnd, spriteYEnd;
+
+    private final float initialDelay = tweenDuration;
+    private final float repeatRate = tweenDuration;
+    private Directions heldDirection = null;
+    private float holdTimer = 0f;
+
+    //nivel actual
+    private int level = 1;
 
     @Override
     public void show() {
-        //inicialización de las cosas gráficas
         camera = new OrthographicCamera();
         viewport = new FitViewport(GameConfig.PX_WIDTH, GameConfig.PX_HEIGHT, camera);
 
         batch = new SpriteBatch();
 
-        floorTexture = new Texture("textures/floor.png");
-        playerTexture = new Texture("textures/player.png");
-        boxTexture = new Texture("textures/box.png");
-        boxPlacedTexture = new Texture("textures/boxPlaced.png");
-        wallTexture = new Texture("textures/wall.png");
-        targetTexture = new Texture("textures/target.png");
+        game.startLevel(level);
 
-        //se supone que esto es mejor para pixelart, pero no veo diferencia la verdad (igual lo dejo)
-        floorTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
-        wallTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
-        boxTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
-        boxPlacedTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
-        playerTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
-        targetTexture.setFilter(TextureFilter.Nearest, TextureFilter.Nearest);
+        movementThread = new Thread(movementThreadLogic);
+        movementThread.start();
 
-        playerSprite = new Sprite(playerTexture);
-        int tile = GameConfig.TILE_SIZE;
-        float w = playerTexture.getWidth();
-        float h = playerTexture.getHeight();
-        float ratio = h / w;
-        playerSprite.setSize(tile, tile * ratio);
+        floorTexture = load("textures/floor.png");
+        wallTexture = load("textures/wall.png");
+        boxTexture = load("textures/box.png");
+        boxTexturePlaced = load("textures/boxPlaced.png");
+        targetTexture = load("textures/target.png");
 
-        //cargar nivel
-        LevelLoader loader = new LevelLoader(juego.getCurrentLevelPath());
-        char levData[][] = loader.LevelCharData();
-        tileMap = new TileMap(levData);
+        downWalk1 = load("textures/player_down_walk1.png");
+        downIdle = load("textures/player_down_idle.png");
+        downWalk2 = load("textures/player_down_walk2.png");
 
-        //la cola de movimientos
-        moves = new ArrayBlockingQueue<>(1);
+        upWalk1 = load("textures/player_up_walk1.png");
+        upIdle = load("textures/player_up_idle.png");
+        upWalk2 = load("textures/player_up_walk2.png");
 
-        //hilo
-        moveLogic = new MoveLogic(tileMap, moves);
-        logicThread = new Thread(moveLogic);
-        logicThread.start();
+        leftWalk1 = load("textures/player_left_walk1.png");
+        leftIdle = load("textures/player_left_idle.png");
+        leftWalk2 = load("textures/player_left_walk2.png");
 
-        //tiempo
-        time = new Time();
-        time.start();
+        rightWalk1 = load("textures/player_right_walk1.png");
+        rightIdle = load("textures/player_right_idle.png");
+        rightWalk2 = load("textures/player_right_walk2.png");
 
-        uiFont = new BitmapFont();
-        uiFont.getData().setScale(1f);
-        uiFont.setUseIntegerPositions(true);
+        //esto es importante, pues el sprite del player no es 16*16
+        playerRatio = (float) downIdle.getHeight() / downIdle.getWidth();
+    }
 
+    private Texture load(String path) {
+        return new Texture(files.internal(path));
     }
 
     @Override
     public void render(float delta) {
+        updateContinuousInput(delta);
 
-        if (input.isKeyJustPressed(Input.Keys.R)) {
-            resetLevel();
-            ScreenUtils.clear(Color.BLACK);
+        applyMoveResult();
+
+        resetLevel();
+
+        advanceTween(delta);
+
+        ScreenUtils.clear(Color.BLACK);
+        viewport.apply();
+        batch.setProjectionMatrix(camera.combined);
+        batch.begin();
+        drawMap();
+        drawPlayer();
+        batch.end();
+    }
+
+    private void applyMoveResult() {
+        MoveResult moveResult = shared.takeResult();
+        
+        if (moveResult == null || !moveResult.hasMoved()) {
             return;
         }
 
-        if (input.isKeyJustPressed(Input.Keys.UP)) {
-            moves.offer(Directions.UP);
-        }
-        if (input.isKeyJustPressed(Input.Keys.DOWN)) {
-            moves.offer(Directions.DOWN);
-        }
-        if (input.isKeyJustPressed(Input.Keys.LEFT)) {
-            moves.offer(Directions.LEFT);
-        }
-        if (input.isKeyJustPressed(Input.Keys.RIGHT)) {
-            moves.offer(Directions.RIGHT);
-        }
-        //la idea es que lo de arriba se haga con delta en el futuro (pero lo dudo a este paso) (yo del futuro: sehhh no creo que se vaya
-        //a hacer lo de delta xd)
+        //posición en píxeles antes de moverse
+        float startPX = game.getPlayer().getX() * GameConfig.TILE_SIZE;
+        float startPY = game.getPlayer().getY() * GameConfig.TILE_SIZE;
 
-        ScreenUtils.clear(Color.BLACK); //limpia la pantalla
+        applier.apply(game.getMap(), game.getPlayer(), moveResult);
+        game.recomputeVictory();
 
-        viewport.apply();
-        batch.setProjectionMatrix(camera.combined);
+        float endPX = game.getPlayer().getX() * GameConfig.TILE_SIZE;
+        float endPY = game.getPlayer().getY() * GameConfig.TILE_SIZE;
 
-        batch.begin();
+        startTween(startPX, startPY, endPX, endPY);
+    }
 
-        synchronized (tileMap) {
-            for (int row = 0; row < GameConfig.ROWS; row++) {
-                for (int col = 0; col < GameConfig.COLS; col++) {
-                    int px = col * GameConfig.TILE_SIZE;
-                    int py = row * GameConfig.TILE_SIZE;
-
-                    char c = tileMap.getTile(col, row);
-
-                    batch.draw(floorTexture, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
-
-                    if (c == TileMap.WALL) {
-                        batch.draw(wallTexture, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
-                    } else if (c == TileMap.TARGET) {
-                        batch.draw(targetTexture, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
-                    } else if (c == TileMap.BOX) {
-                        batch.draw(boxTexture, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
-                    } else if (c == TileMap.BOX_ON_TARGET) {
-                        batch.draw(boxPlacedTexture, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
-                    }
-                }
-            }
-
-            int px = moveLogic.getPlayerX();
-            int py = moveLogic.getPlayerY();
-            playerSprite.setPosition(px * GameConfig.TILE_SIZE, py * GameConfig.TILE_SIZE);
-        }
-        playerSprite.draw(batch);
-
-        float margin = 4f;
-        float hudX = margin;
-        float hudY = GameConfig.PX_HEIGHT - margin;
-        String hud = "Tiempo " + time.mmss() + "   Pasos " + moveLogic.getMoveCount() + "   Empujes " + moveLogic.getPushCount();
-
-        uiFont.setColor(0, 0, 0, 1);
-        uiFont.draw(batch, hud, hudX + 1, hudY - 1);
-        uiFont.setColor(1, 1, 1, 1);
-        uiFont.draw(batch, hud, hudX, hudY);
-
-        batch.end();
-
-        if (moveLogic.isLevelCompleted() && !levelCompleted) {
-            levelCompleted = true;
-
-            if (juego.advanceLevel()) {
-                resetLevel();
-                levelCompleted = false;
-            } else {
-            }
-        }
-
+    private void startTween(float startPX, float startPY, float endPX, float endPY) {
+        spriteXStart = startPX;
+        spriteYStart = startPY;
+        spriteXEnd = endPX;
+        spriteYEnd = endPY;
+        tweenTime = 0f;
+        tweenActive = true;
     }
 
     private void resetLevel() {
-        if (moveLogic != null) {
-            moveLogic.stop();
+        if (input.isKeyJustPressed(R)) {
+            game.startLevel(level);
+            tweenActive = false;
         }
-        if (logicThread != null) {
-            logicThread.interrupt();
-        }
-
-        moves = new ArrayBlockingQueue<>(1);
-
-        LevelLoader loader = new LevelLoader(juego.getCurrentLevelPath());
-        char grid[][] = loader.LevelCharData();
-        tileMap = new TileMap(grid);
-
-        moveLogic = new MoveLogic(tileMap, moves);
-        logicThread = new Thread(moveLogic);
-        logicThread.start();
-
-        time.reset();
-        time.start();
-        levelCompleted = false;
     }
 
-    @Override
-    public void dispose() {
-        hide();
+    private void advanceTween(float delta) {
+        if (!tweenActive) {
+            return;
+        }
+        tweenTime += delta;
+        if (tweenTime >= tweenDuration) {
+            tweenActive = false;
+        }
+    }
 
-        floorTexture.dispose();
-        wallTexture.dispose();
-        boxTexture.dispose();
-        playerTexture.dispose();
-        boxPlacedTexture.dispose();
-        targetTexture.dispose();
+    private void updateContinuousInput(float delta) {
+        if (tweenActive) {
+            return;
+        }
+        Directions currentHeld = readHeldDirection();
+        if (currentHeld == null) {
+            heldDirection = null;
+            holdTimer = 0f;
+            return;
+        }
+
+        if (heldDirection == null || currentHeld != heldDirection) {
+            heldDirection = currentHeld;
+            holdTimer = 0f;
+            enqueueDirection(heldDirection);
+            return;
+        }
+
+        holdTimer += delta;
+        if (holdTimer >= initialDelay) {
+            float over = holdTimer - initialDelay;
+            while (over >= repeatRate) {
+                enqueueDirection(heldDirection);
+                over -= repeatRate;
+            }
+            holdTimer = initialDelay + over;
+        }
+    }
+
+    private Directions readHeldDirection() {
+        if (input.isKeyPressed(UP)) {
+            return Directions.UP;
+        }
+        if (input.isKeyPressed(DOWN)) {
+            return Directions.DOWN;
+        }
+        if (input.isKeyPressed(LEFT)) {
+            return Directions.LEFT;
+        }
+        if (input.isKeyPressed(RIGHT)) {
+            return Directions.RIGHT;
+        }
+        return null;
+    }
+
+    private void enqueueDirection(Directions dir) {
+        if (directionQueue.size() >= 1) {
+            return;
+        }
+        facing = dir;
+        movementThreadLogic.updateCopies(
+                MapCopy.copy(game.getMap()),
+                game.getPlayer().getPosition()
+        );
+        directionQueue.offer(dir);
+    }
+
+    private void drawMap() {
+        TileMap map = game.getMap();
+        for (int row = 0; row < GameConfig.ROWS; row++) {
+            for (int col = 0; col < GameConfig.COLS; col++) {
+                int px = col * GameConfig.TILE_SIZE;
+                int py = row * GameConfig.TILE_SIZE;
+
+                batch.draw(floorTexture, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
+
+                char ch = map.getTile(col, row);
+                switch (ch) {
+                    case TileMap.WALL:
+                        batch.draw(wallTexture, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
+                        break;
+                    case TileMap.TARGET:
+                        batch.draw(targetTexture, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
+                        break;
+                    case TileMap.BOX:
+                        batch.draw(boxTexture, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
+                        break;
+                    case TileMap.BOX_ON_TARGET:
+                        batch.draw(targetTexture, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
+                        batch.draw(boxTexturePlaced, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
+                        break;
+                    default:
+                        break;
+                }
+            }
+        }
+    }
+
+    private void drawPlayer() {
+        float drawX, drawY;
+        if (tweenActive) {
+            float t =  tweenTime / tweenDuration;
+            drawX = spriteXStart + (spriteXEnd - spriteXStart) * t;
+            drawY = spriteYStart + (spriteYEnd - spriteYStart) * t;
+        } else {
+            drawX = game.getPlayer().getX() * GameConfig.TILE_SIZE;
+            drawY = game.getPlayer().getY() * GameConfig.TILE_SIZE;
+        }
+
+        Texture frame = pickFrameForFacing();
+
+        float w = GameConfig.TILE_SIZE;
+        float h = GameConfig.TILE_SIZE * playerRatio;
+        batch.draw(frame, drawX, drawY, w, h);
+    }
+
+    private Texture pickFrameForFacing() {
+        if (!tweenActive) {
+            switch (facing) {
+                case UP:
+                    return upIdle;
+                case DOWN:
+                    return downIdle;
+                case LEFT:
+                    return leftIdle;
+                case RIGHT:
+                    return rightIdle;
+                default:
+                    return downIdle;
+            }
+        }
+
+        float t = tweenTime / tweenDuration;
+        if (t < 1f / 3f) {
+            switch (facing) {
+                case UP:
+                    return upWalk1;
+                case DOWN:
+                    return downWalk1;
+                case LEFT:
+                    return leftWalk1;
+                case RIGHT:
+                    return rightWalk1;
+                default:
+                    return downWalk1;
+            }
+        } else if (t < 2f / 3f) {
+            switch (facing) {
+                case UP:
+                    return upIdle;
+                case DOWN:
+                    return downIdle;
+                case LEFT:
+                    return leftIdle;
+                case RIGHT:
+                    return rightIdle;
+                default:
+                    return downIdle;
+            }
+        } else {
+            switch (facing) {
+                case UP:
+                    return upWalk2;
+                case DOWN:
+                    return downWalk2;
+                case LEFT:
+                    return leftWalk2;
+                case RIGHT:
+                    return rightWalk2;
+                default:
+                    return downWalk2;
+            }
+        }
     }
 
     @Override
@@ -235,23 +341,37 @@ public class GameScreen implements Screen {
 
     @Override
     public void pause() {
-        time.pause();
     }
 
     @Override
     public void resume() {
-        time.resume();
     }
 
     @Override
     public void hide() {
-        if (moveLogic != null) {
-            moveLogic.stop();
-        }
-
-        if (logicThread != null) {
-            logicThread.interrupt();
-        }
+        directionQueue.offer(Directions.QUIT);
+        movementThreadLogic.stop();
     }
 
+    @Override
+    public void dispose() {
+        batch.dispose();
+        floorTexture.dispose();
+        wallTexture.dispose();
+        boxTexture.dispose();
+        boxTexturePlaced.dispose();
+        targetTexture.dispose();
+        downWalk1.dispose();
+        downIdle.dispose();
+        downWalk2.dispose();
+        upWalk1.dispose();
+        upIdle.dispose();
+        upWalk2.dispose();
+        leftWalk1.dispose();
+        leftIdle.dispose();
+        leftWalk2.dispose();
+        rightWalk1.dispose();
+        rightIdle.dispose();
+        rightWalk2.dispose();
+    }
 }
