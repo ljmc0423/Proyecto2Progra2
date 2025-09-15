@@ -24,6 +24,7 @@ import static com.badlogic.gdx.Input.Keys.*;
 import com.badlogic.gdx.audio.Sound;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
+import com.badlogic.gdx.audio.Music;
 
 public final class GameScreen implements Screen {
 
@@ -38,7 +39,7 @@ public final class GameScreen implements Screen {
     //lógica de movimiento
     private final MoveApplier applier = new MoveApplier();
     private final SharedMovement shared = new SharedMovement();
-    private final BlockingQueue<Directions> directionQueue = new ArrayBlockingQueue<>(8);
+    private final BlockingQueue<Directions> directionQueue = new ArrayBlockingQueue<>(3);
     private final MovementThread movementThreadLogic = new MovementThread(shared, directionQueue);
     private Thread movementThread;
 
@@ -54,6 +55,7 @@ public final class GameScreen implements Screen {
     private Sound stepSound;
     private Sound boxPlacedSound;
     private Sound resetLevelSound;
+    private Music bgMusic;
 
     private Directions facing = Directions.DOWN; //por default, ve hacia abajo
     private float playerRatio = 1f;
@@ -110,6 +112,11 @@ public final class GameScreen implements Screen {
         stepSound = loadSound("audios/step.wav");
         boxPlacedSound = loadSound("audios/box_placed.wav");
         resetLevelSound = loadSound("audios/reset_level.wav");
+
+        bgMusic = audio.newMusic(files.internal("audios/levelSong.mp3"));
+        bgMusic.setLooping(true);
+        bgMusic.setVolume(0.25f); //0.25 para que no le quite protagonismo a los otros efectos de sonidos
+        bgMusic.play();
 
         //esto es importante, pues el sprite del player no es 16*16
         playerRatio = (float) downIdle.getHeight() / downIdle.getWidth();
@@ -401,5 +408,8 @@ public final class GameScreen implements Screen {
         rightIdle.dispose();
         rightWalk2.dispose();
         stepSound.dispose();
+        boxPlacedSound.dispose();
+        resetLevelSound.dispose();
+        bgMusic.dispose();
     }
 }
