@@ -183,33 +183,43 @@ public class ConfigScreen extends BaseScreen {
     }
 
     private Skin buildMinimalSkin() {
-        Skin s = new Skin();
+    Skin s = new Skin();
 
-        BitmapFont font = new BitmapFont();
-        s.add("default-font", font, BitmapFont.class);
+    BitmapFont font = new BitmapFont();
+    s.add("default-font", font, BitmapFont.class);
 
-        Pixmap px = new Pixmap(2, 2, Pixmap.Format.RGBA8888);
-        px.setColor(Color.WHITE);
-        px.fill();
-        Texture white = new Texture(px);
-        px.dispose();
-        s.add("white", white);
+    Pixmap px = new Pixmap(2, 2, Pixmap.Format.RGBA8888);
+    px.setColor(Color.WHITE);
+    px.fill();
+    Texture white = new Texture(px);
+    px.dispose();
+    s.add("white", white);
 
-        Label.LabelStyle ls = new Label.LabelStyle();
-        ls.font = font;
-        ls.fontColor = Color.WHITE;
-        s.add("default", ls);
+    
+    Label.LabelStyle ls = new Label.LabelStyle();
+    ls.font = font;
+    ls.fontColor = Color.WHITE;
+    s.add("default", ls);
 
-        TextButton.TextButtonStyle bs = new TextButton.TextButtonStyle();
-        bs.font = font;
-        bs.up   = s.newDrawable("white", new Color(1, 1, 1, 0.15f));
-        bs.down = s.newDrawable("white", new Color(1, 1, 1, 0.25f));
-        bs.over = s.newDrawable("white", new Color(1, 1, 1, 0.20f));
-        bs.fontColor = Color.WHITE;
-        s.add("default", bs);
+    
+    TextButton.TextButtonStyle bs = new TextButton.TextButtonStyle();
+    bs.font = font;
+    bs.up   = s.newDrawable("white", new Color(1, 1, 1, 0.15f));
+    bs.down = s.newDrawable("white", new Color(1, 1, 1, 0.25f));
+    bs.over = s.newDrawable("white", new Color(1, 1, 1, 0.20f));
+    bs.fontColor = Color.WHITE;
+    s.add("default", bs);
 
-        return s;
-    }
+    
+    Window.WindowStyle ws = new Window.WindowStyle();
+    ws.titleFont = font;
+    ws.titleFontColor = Color.WHITE;
+    ws.background = s.newDrawable("white", new Color(0f, 0f, 0f, 0.9f));
+    s.add("default", ws);
+
+    return s;
+}
+
 
     @Override
     public void dispose() {
