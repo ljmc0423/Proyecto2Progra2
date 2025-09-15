@@ -1,9 +1,8 @@
+
 package Screens;
 
 import com.badlogic.gdx.Game;
-import static com.badlogic.gdx.Gdx.app;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -12,59 +11,68 @@ import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.elkinedwin.LogicaUsuario.ManejoUsuarios;
 
 public class ConfigScreen extends BaseScreen {
 
-    private static final String PREFS_NAME = "sokoban_prefs";
-    private static final String KEY_VOLUME = "volume";
-    private static final float DEFAULT_VOL = 0.6f;
-
     private final Game game;
     private Skin skin;
-    private Preferences prefs;
+
+    private KeyBinder kbUp, kbDown, kbLeft, kbRight, kbReiniciar;
+    private TextButton btnGuardar, btnVolver;
 
     public ConfigScreen(Game game) { this.game = game; }
 
-    public static float getStoredVolume() {
-        return app.getPreferences(PREFS_NAME).getFloat(KEY_VOLUME, DEFAULT_VOL);
-    }
-
     @Override
     protected void onShow() {
-        prefs = app.getPreferences(PREFS_NAME);
-        float initialVolume = prefs.getFloat(KEY_VOLUME, DEFAULT_VOL);
-
-        // === Teclas: se leen DIRECTO del HashMap del UsuarioActivo ===
-        // Asumo que ManejoUsuarios.UsuarioActivo.configuraciones != null y contiene ints (KeyCodes)
-        int kUp    = getCfg("MoverArriba", Input.Keys.UP);
-        int kDown  = getCfg("MoverAbajo",  Input.Keys.DOWN);
-        int kLeft  = getCfg("MoverIzq",    Input.Keys.LEFT);
-        int kRight = getCfg("MoverDer",    Input.Keys.RIGHT);
-
         skin = buildMinimalSkin();
 
-        Label title = new Label("Configuraciones", skin);
-        title.setFontScale(1.2f);
+        int kUp    = getCfg("MoverArriba",  Input.Keys.UP);
+        int kDown  = getCfg("MoverAbajo",   Input.Keys.DOWN);
+        int kLeft  = getCfg("MoverIzq",     Input.Keys.LEFT);
+        int kRight = getCfg("MoverDer",     Input.Keys.RIGHT);
+        int kRei   = getCfg("Reiniciar",    Input.Keys.R);
 
-        // Volumen (igual que antes)
-        Label volumeLbl = new Label("Volumen", skin);
-        Label valueLbl  = new Label(Math.round(initialVolume * 100) + "%", skin);
+        Label titulo = new Label("Controles", skin);
+        titulo.setFontScale(1.2f);
 
-        Slider volumeSlider = new Slider(0f, 1f, 0.01f, false, skin);
-        volumeSlider.setValue(initialVolume);
-        volumeSlider.addListener((event) -> {
-            float v = volumeSlider.getValue();
-            valueLbl.setText(Math.round(v * 100) + "%");
-            prefs.putFloat(KEY_VOLUME, v).flush();
-            return false;
+        kbUp        = new KeyBinder("Arriba",     "MoverArriba", kUp);
+        kbDown      = new KeyBinder("Abajo",      "MoverAbajo",  kDown);
+        kbLeft      = new KeyBinder("Izquierda",  "MoverIzq",    kLeft);
+        kbRight     = new KeyBinder("Derecha",    "MoverDer",    kRight);
+        kbReiniciar = new KeyBinder("Reiniciar",  "Reiniciar",   kRei);
+
+        btnGuardar = new TextButton("Guardar cambios", skin);
+        btnGuardar.setDisabled(true);
+        btnGuardar.addListener(new ClickListener() {
+            @Override public void clicked(InputEvent event, float x, float y) {
+                if (btnGuardar.isDisabled()) return;
+
+                putCfg("MoverArriba", kbUp.getActual());
+                putCfg("MoverAbajo",  kbDown.getActual());
+                putCfg("MoverIzq",    kbLeft.getActual());
+                putCfg("MoverDer",    kbRight.getActual());
+                putCfg("Reiniciar",   kbReiniciar.getActual());
+
+                kbUp.confirmar();
+                kbDown.confirmar();
+                kbLeft.confirmar();
+                kbRight.confirmar();
+                kbReiniciar.confirmar();
+
+                actualizarEstadoGuardar();
+
+                
+                new Dialog("Listo", skin)
+                        .text("Cambios guardados.")
+                        .button("OK", true)
+                        .show(stage);
+            }
         });
 
-        TextButton backBtn = new TextButton("Volver", skin);
-        backBtn.addListener(new ClickListener() {
+        btnVolver = new TextButton("Regresar", skin);
+        btnVolver.addListener(new ClickListener() {
             @Override public void clicked(InputEvent event, float x, float y) {
-                prefs.flush();
                 game.setScreen(new MenuScreen(game));
             }
         });
@@ -74,57 +82,48 @@ public class ConfigScreen extends BaseScreen {
         stage.addActor(root);
 
         root.top().padTop(40f);
-        root.add(title).padBottom(32f).row();
+        root.add(titulo).padBottom(22f).row();
 
-        // Fila volumen
-        Table rowVolume = new Table();
-        rowVolume.defaults().pad(8f);
-        rowVolume.add(volumeLbl).left().padRight(12f);
-        rowVolume.add(volumeSlider).width(300f);
-        rowVolume.add(valueLbl).width(60f).right();
-        root.add(rowVolume).center().padBottom(24f).row();
+        Table t = new Table();
+        t.defaults().pad(6f);
+        t.add(kbUp.lbl).left().padRight(10f);        t.add(kbUp.btn).width(240f).row();
+        t.add(kbDown.lbl).left().padRight(10f);      t.add(kbDown.btn).width(240f).row();
+        t.add(kbLeft.lbl).left().padRight(10f);      t.add(kbLeft.btn).width(240f).row();
+        t.add(kbRight.lbl).left().padRight(10f);     t.add(kbRight.btn).width(240f).row();
+        t.add(kbReiniciar.lbl).left().padRight(10f); t.add(kbReiniciar.btn).width(240f).row();
 
-        // Controles
-        Label controlsTitle = new Label("Controles", skin);
-        root.add(controlsTitle).padBottom(8f).row();
+        root.add(t).center().padBottom(16f).row();
 
-        Table keysTable = new Table();
-        keysTable.defaults().pad(6f);
-        root.add(keysTable).center().row();
+        Table botones = new Table();
+        botones.defaults().pad(8f).width(180f);
+        botones.add(btnVolver);
+        botones.add(btnGuardar);
+        root.add(botones).center();
 
-        KeyBinder binderUp    = new KeyBinder("Mover arriba",    kUp,    "MoverArriba");
-        KeyBinder binderDown  = new KeyBinder("Mover abajo",     kDown,  "MoverAbajo");
-        KeyBinder binderLeft  = new KeyBinder("Mover izquierda", kLeft,  "MoverIzq");
-        KeyBinder binderRight = new KeyBinder("Mover derecha",   kRight, "MoverDer");
-
-        keysTable.add(binderUp.name).left().padRight(10f);
-        keysTable.add(binderUp.button).width(220f).row();
-
-        keysTable.add(binderDown.name).left().padRight(10f);
-        keysTable.add(binderDown.button).width(220f).row();
-
-        keysTable.add(binderLeft.name).left().padRight(10f);
-        keysTable.add(binderLeft.button).width(220f).row();
-
-        keysTable.add(binderRight.name).left().padRight(10f);
-        keysTable.add(binderRight.button).width(220f).row();
-
-        root.add(backBtn).padTop(28f);
-
-        // Captura global de tecla (si algún KeyBinder está escuchando)
         stage.addListener(new InputListener() {
             @Override public boolean keyDown(InputEvent event, int keycode) {
                 boolean handled = false;
-                handled |= binderUp.tryCapture(keycode);
-                handled |= binderDown.tryCapture(keycode);
-                handled |= binderLeft.tryCapture(keycode);
-                handled |= binderRight.tryCapture(keycode);
+                handled |= kbUp.tryCapture(keycode);
+                handled |= kbDown.tryCapture(keycode);
+                handled |= kbLeft.tryCapture(keycode);
+                handled |= kbRight.tryCapture(keycode);
+                handled |= kbReiniciar.tryCapture(keycode);
+                if (handled) actualizarEstadoGuardar();
                 return handled;
             }
         });
     }
 
-    // Lee una tecla desde el HashMap directo de UsuarioActivo, con default
+    private void actualizarEstadoGuardar() {
+        boolean cambioValido =
+                kbUp.cambioValido() ||
+                kbDown.cambioValido() ||
+                kbLeft.cambioValido() ||
+                kbRight.cambioValido() ||
+                kbReiniciar.cambioValido();
+        btnGuardar.setDisabled(!cambioValido);
+    }
+
     private int getCfg(String key, int def) {
         try {
             Integer v = ManejoUsuarios.UsuarioActivo.configuracion.get(key);
@@ -134,56 +133,62 @@ public class ConfigScreen extends BaseScreen {
         }
     }
 
-    // Capturador que escribe directo en ManejoUsuarios.UsuarioActivo.configuraciones
+    private void putCfg(String key, int value) {
+        try {
+            ManejoUsuarios.UsuarioActivo.configuracion.put(key, value);
+        } catch (Exception ignored) {}
+    }
+
     private class KeyBinder {
-        final Label name;
-        final TextButton button;
+        final Label lbl;
+        final TextButton btn;
         final String cfgKey;
-        boolean listening = false;
-        int value;
+        int original;
+        int actual;
+        boolean escuchando = false;
 
-        KeyBinder(String label, int initialValue, String cfgKey) {
-            this.name = new Label(label, skin);
-            this.button = new TextButton(Input.Keys.toString(initialValue), skin);
+        KeyBinder(String nombre, String cfgKey, int valor) {
+            this.lbl = new Label(nombre, skin);
+            this.btn = new TextButton(Input.Keys.toString(valor), skin);
             this.cfgKey = cfgKey;
-            this.value = initialValue;
+            this.original = valor;
+            this.actual = valor;
 
-            button.addListener(new ClickListener() {
+            btn.addListener(new ClickListener() {
                 @Override public void clicked(InputEvent event, float x, float y) {
-                    listening = true;
-                    button.setText("Presiona una tecla...");
+                    escuchando = true;
+                    btn.setText("Presiona una tecla...");
                 }
             });
         }
 
         boolean tryCapture(int keycode) {
-            if (!listening) return false;
+            if (!escuchando) return false;
 
-            // (Opcional) cancelar con ESC
             if (keycode == Input.Keys.ESCAPE) {
-                listening = false;
-                button.setText(Input.Keys.toString(value));
+                escuchando = false;
+                btn.setText(Input.Keys.toString(actual));
                 return true;
             }
 
-            value = keycode;
-            button.setText(Input.Keys.toString(value));
-            try {
-                ManejoUsuarios.UsuarioActivo.configuracion.put(cfgKey, value);
-            } catch (Exception ignored) { /* si por alguna razón es null, no rompemos la UI */ }
-            listening = false;
+            actual = keycode;
+            btn.setText(Input.Keys.toString(actual));
+            escuchando = false;
             return true;
         }
+
+        boolean cambioValido() { return actual != original; }
+        void confirmar() { original = actual; }
+        int getActual() { return actual; }
     }
 
-    // === Skin minimal idéntico al tuyo ===
     private Skin buildMinimalSkin() {
         Skin s = new Skin();
 
         BitmapFont font = new BitmapFont();
         s.add("default-font", font, BitmapFont.class);
 
-        Pixmap px = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        Pixmap px = new Pixmap(2, 2, Pixmap.Format.RGBA8888);
         px.setColor(Color.WHITE);
         px.fill();
         Texture white = new Texture(px);
@@ -195,20 +200,11 @@ public class ConfigScreen extends BaseScreen {
         ls.fontColor = Color.WHITE;
         s.add("default", ls);
 
-        Slider.SliderStyle ss = new Slider.SliderStyle();
-        ss.background  = s.newDrawable("white", new Color(1, 1, 1, 0.12f));
-        ss.knob        = s.newDrawable("white", Color.WHITE);
-        ss.knobBefore  = s.newDrawable("white", new Color(1, 1, 1, 0.35f));
-        ss.background.setMinHeight(16f);
-        ss.knob.setMinHeight(24f);
-        ss.knob.setMinWidth(24f);
-        s.add("default-horizontal", ss);
-
         TextButton.TextButtonStyle bs = new TextButton.TextButtonStyle();
         bs.font = font;
-        bs.up   = s.newDrawable("white", new Color(1, 1, 1, 0.12f));
-        bs.down = s.newDrawable("white", new Color(1, 1, 1, 0.20f));
-        bs.over = s.newDrawable("white", new Color(1, 1, 1, 0.16f));
+        bs.up   = s.newDrawable("white", new Color(1, 1, 1, 0.15f));
+        bs.down = s.newDrawable("white", new Color(1, 1, 1, 0.25f));
+        bs.over = s.newDrawable("white", new Color(1, 1, 1, 0.20f));
         bs.fontColor = Color.WHITE;
         s.add("default", bs);
 
@@ -218,6 +214,6 @@ public class ConfigScreen extends BaseScreen {
     @Override
     public void dispose() {
         super.dispose();
-        skin.dispose();
+        if (skin != null) skin.dispose();
     }
 }

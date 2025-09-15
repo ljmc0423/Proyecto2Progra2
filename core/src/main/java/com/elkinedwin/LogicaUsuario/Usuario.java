@@ -52,11 +52,11 @@ public class Usuario {
         for (int i = 0; i < 7; i++) partidasPorNivel.add(0);
 
         configuracion.put("Volumen", 80);
-        configuracion.put("MoverArriba", 38);
-        configuracion.put("MoverAbajo", 40);
-        configuracion.put("MoverDer", 39);
-        configuracion.put("MoverIzq", 37);
-        configuracion.put("Reiniciar", 82);
+        configuracion.put("MoverArriba", 19);
+        configuracion.put("MoverAbajo", 20);
+        configuracion.put("MoverDer", 22);
+        configuracion.put("MoverIzq", 21);
+        configuracion.put("Reiniciar", 46);
         configuracion.put("Idioma", 1);
 
         for (int i = 0; i < tiempoPromedio.length; i++) tiempoPromedio[i] = 0;

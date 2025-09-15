@@ -38,6 +38,7 @@ public class MenuScreen extends BaseScreen {
         playImg.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
+                // GameScreen no recibe SokobanGame por constructor (se crea adentro)
                 game.setScreen(new GameScreen());
             }
         });
@@ -45,18 +46,21 @@ public class MenuScreen extends BaseScreen {
         levelImg.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
+                // futuro: pantalla de niveles
             }
         });
 
         configImg.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
+                game.setScreen(new ConfigScreen(game));
             }
         });
 
         sokobanUniverseImg.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
+                // futuro: otra pantalla
             }
         });
 

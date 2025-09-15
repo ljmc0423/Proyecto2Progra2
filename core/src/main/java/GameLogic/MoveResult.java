@@ -23,7 +23,6 @@ public final class MoveResult {
 
     public static MoveResult blocked() {
         return new MoveResult(Type.BLOCKED, 0, 0, 0, 0, '\0', '\0'); 
-        // '/0' significa null, lo uso porque en char no se puede poner null como tal
     }
 
     public static MoveResult step(int newX, int newY) {

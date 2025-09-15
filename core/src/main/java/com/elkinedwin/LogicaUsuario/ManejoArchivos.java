@@ -66,11 +66,11 @@ public class ManejoArchivos {
         f.seek(77); f.writeInt(80);
 
         f.seek(81);
-        f.writeInt(38);
-        f.writeInt(40);
-        f.writeInt(39);
-        f.writeInt(37);
-        f.writeInt(82);
+        f.writeInt(19);
+        f.writeInt(20);
+        f.writeInt(22);
+        f.writeInt(21);
+        f.writeInt(46);
 
         f.seek(101);
         for (int i = 0; i < 7; i++) f.writeInt(0);
