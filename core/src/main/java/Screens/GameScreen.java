@@ -9,6 +9,8 @@ import GameLogic.MovementThread;
 import GameLogic.SharedMovement;
 import GameLogic.SokobanGame;
 import GameLogic.TileMap;
+import GameLogic.Type;
+import static com.badlogic.gdx.Gdx.audio;
 import static com.badlogic.gdx.Gdx.files;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
@@ -19,6 +21,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import static com.badlogic.gdx.Gdx.input;
 import static com.badlogic.gdx.Input.Keys.*;
+import com.badlogic.gdx.audio.Sound;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 
@@ -31,11 +34,11 @@ public final class GameScreen implements Screen {
 
     //clase concreta de game
     private final SokobanGame game = new SokobanGame();
-    
+
     //lógica de movimiento
     private final MoveApplier applier = new MoveApplier();
     private final SharedMovement shared = new SharedMovement();
-    private final BlockingQueue<Directions> directionQueue = new ArrayBlockingQueue<>(3);
+    private final BlockingQueue<Directions> directionQueue = new ArrayBlockingQueue<>(8);
     private final MovementThread movementThreadLogic = new MovementThread(shared, directionQueue);
     private Thread movementThread;
 
@@ -46,6 +49,11 @@ public final class GameScreen implements Screen {
     private Texture upWalk1, upIdle, upWalk2;
     private Texture leftWalk1, leftIdle, leftWalk2;
     private Texture rightWalk1, rightIdle, rightWalk2;
+
+    //audios
+    private Sound stepSound;
+    private Sound boxPlacedSound;
+    private Sound resetLevelSound;
 
     private Directions facing = Directions.DOWN; //por default, ve hacia abajo
     private float playerRatio = 1f;
@@ -99,12 +107,20 @@ public final class GameScreen implements Screen {
         rightIdle = load("textures/player_right_idle.png");
         rightWalk2 = load("textures/player_right_walk2.png");
 
+        stepSound = loadSound("audios/step.wav");
+        boxPlacedSound = loadSound("audios/box_placed.wav");
+        resetLevelSound = loadSound("audios/reset_level.wav");
+
         //esto es importante, pues el sprite del player no es 16*16
         playerRatio = (float) downIdle.getHeight() / downIdle.getWidth();
     }
 
     private Texture load(String path) {
         return new Texture(files.internal(path));
+    }
+
+    private Sound loadSound(String path) {
+        return audio.newSound(files.internal(path));
     }
 
     @Override
@@ -128,7 +144,7 @@ public final class GameScreen implements Screen {
 
     private void applyMoveResult() {
         MoveResult moveResult = shared.takeResult();
-        
+
         if (moveResult == null || !moveResult.hasMoved()) {
             return;
         }
@@ -142,6 +158,13 @@ public final class GameScreen implements Screen {
 
         float endPX = game.getPlayer().getX() * GameConfig.TILE_SIZE;
         float endPY = game.getPlayer().getY() * GameConfig.TILE_SIZE;
+
+        stepSound.play(1.0f);
+
+        if (moveResult.getType() == Type.PUSH
+                && game.getMap().getTile(moveResult.getBoxDestX(), moveResult.getBoxDestY()) == TileMap.BOX_ON_TARGET) {
+            boxPlacedSound.play(1.0f);
+        }
 
         startTween(startPX, startPY, endPX, endPY);
     }
@@ -157,6 +180,7 @@ public final class GameScreen implements Screen {
 
     private void resetLevel() {
         if (input.isKeyJustPressed(R)) {
+            resetLevelSound.play(1.0f);
             game.startLevel(level);
             tweenActive = false;
         }
@@ -263,7 +287,7 @@ public final class GameScreen implements Screen {
     private void drawPlayer() {
         float drawX, drawY;
         if (tweenActive) {
-            float t =  tweenTime / tweenDuration;
+            float t = tweenTime / tweenDuration;
             drawX = spriteXStart + (spriteXEnd - spriteXStart) * t;
             drawY = spriteYStart + (spriteYEnd - spriteYStart) * t;
         } else {
@@ -376,5 +400,6 @@ public final class GameScreen implements Screen {
         rightWalk1.dispose();
         rightIdle.dispose();
         rightWalk2.dispose();
+        stepSound.dispose();
     }
 }
