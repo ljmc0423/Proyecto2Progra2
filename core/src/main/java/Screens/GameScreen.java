@@ -25,6 +25,7 @@ import com.badlogic.gdx.audio.Sound;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 
 public final class GameScreen implements Screen {
 
@@ -57,6 +58,9 @@ public final class GameScreen implements Screen {
     private Sound resetLevelSound;
     private Music bgMusic;
 
+    //fuente
+    private BitmapFont font;
+
     private Directions facing = Directions.DOWN; //por default, ve hacia abajo
     private float playerRatio = 1f;
 
@@ -86,6 +90,9 @@ public final class GameScreen implements Screen {
 
         movementThread = new Thread(movementThreadLogic);
         movementThread.start();
+
+        font = new BitmapFont();
+        font.setColor(Color.WHITE);
 
         floorTexture = load("textures/floor.png");
         wallTexture = load("textures/wall.png");
@@ -146,6 +153,7 @@ public final class GameScreen implements Screen {
         batch.begin();
         drawMap();
         drawPlayer();
+        drawHUD();
         batch.end();
     }
 
@@ -309,6 +317,16 @@ public final class GameScreen implements Screen {
         batch.draw(frame, drawX, drawY, w, h);
     }
 
+    private void drawHUD() {
+        // Texto simple arriba-izquierda
+        int moves = game.getPlayer().getMoveCount();
+        int pushes = game.getPlayer().getPushCount();
+
+        font.setColor(Color.WHITE);
+        font.draw(batch, "Nivel " + level + "  Pasos: " + moves + "  Empujes: " + pushes,
+                6, GameConfig.PX_HEIGHT - 6);
+    }
+
     private Texture pickFrameForFacing() {
         if (!tweenActive) {
             switch (facing) {
@@ -411,5 +429,6 @@ public final class GameScreen implements Screen {
         boxPlacedSound.dispose();
         resetLevelSound.dispose();
         bgMusic.dispose();
+        font.dispose();
     }
 }
