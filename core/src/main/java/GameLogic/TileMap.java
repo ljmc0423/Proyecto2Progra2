@@ -11,6 +11,8 @@ public class TileMap {
     public static final char PLAYER = '@';
     public static final char BOX_ON_TARGET = '*';
     public static final char PLAYER_ON_TARGET = '&';
+    public static final char CARPET = '!';
+    public static final char ELEVATOR = '?';
 
     public TileMap(char tileMap[][]) {
         this.tileMap = tileMap;
@@ -40,8 +42,16 @@ public class TileMap {
         return ch == BOX || ch == BOX_ON_TARGET;
     }
 
+    public boolean isElevator(char ch) {
+        return ch == ELEVATOR;
+    }
+    
+    public boolean isCarpet(char ch) {
+        return ch == CARPET;
+    }
+
     public boolean isFree(char ch) {
-        return ch == FLOOR || ch == TARGET;
+        return ch == FLOOR || ch == TARGET || ch == CARPET;
     }
 
     public boolean isWall(char ch) {

@@ -51,7 +51,19 @@ public final class GameScreen implements Screen {
     private final MovementThread movementThreadLogic = new MovementThread(shared, directionQueue);
     private Thread movementThread;
 
+    //nivel normal
     private Texture floorTexture, wallTexture, boxTexture, boxTexturePlaced, targetTexture;
+
+    //selector de niveles
+    private Texture elevatorTexture, carpetTexture;
+
+    private boolean elevatorOpen = false;
+    private int selectedFloor = 0;
+    private int maxUnlockedFloor = 1;
+    private int maxAvailableFloor = 7;
+
+    // coords del elevador (casilla)
+    private int elevatorX = -1, elevatorY = -1;
 
     //frames
     private Texture downWalk1, downIdle, downWalk2;
@@ -89,7 +101,7 @@ public final class GameScreen implements Screen {
     private float timeChronometer;
 
     //nivel actual
-    private int level = 2;
+    private int level = 0;
 
     @Override
     public void show() {
@@ -99,6 +111,10 @@ public final class GameScreen implements Screen {
         batch = new SpriteBatch();
 
         game.startLevel(level);
+
+        elevatorX = -1;
+        elevatorY = -1;
+        elevatorOpen = false;
 
         movementThread = new Thread(movementThreadLogic);
         movementThread.start();
@@ -117,6 +133,9 @@ public final class GameScreen implements Screen {
         boxTexture = load("textures/box.png");
         boxTexturePlaced = load("textures/boxPlaced.png");
         targetTexture = load("textures/target.png");
+
+        elevatorTexture = load("textures/elevator.png");
+        carpetTexture = load("textures/carpet.png");
 
         downWalk1 = load("textures/player_down_walk1.png");
         downIdle = load("textures/player_down_idle.png");
@@ -138,7 +157,6 @@ public final class GameScreen implements Screen {
         boxPlacedSound = loadSound("audios/box_placed.wav");
         resetLevelSound = loadSound("audios/reset_level.wav");
 
-        //el sprite del player no es 16*16
         bgMusic = audio.newMusic(files.internal("audios/levelSong.mp3"));
         bgMusic.setLooping(true);
         bgMusic.setVolume(0.25f); //0.25 para que no le quite protagonismo a los otros efectos de sonidos
@@ -159,21 +177,28 @@ public final class GameScreen implements Screen {
     @Override
     public void render(float delta) {
         timeChronometer += delta;
-        updateContinuousInput(delta);
 
-        applyMoveResult();
+        updateElevatorOverlay();
 
-        resetLevel();
-
-        advanceTween(delta);
+        if (!elevatorOpen) {
+            updateContinuousInput(delta);
+            applyMoveResult();
+            resetLevel();
+            elevatorInput();
+            advanceTween(delta);
+        }
 
         ScreenUtils.clear(Color.BLACK);
         viewport.apply();
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
         drawMap();
+        drawElevator();
         drawPlayer();
         drawHUD();
+        if (elevatorOpen) {
+            drawElevatorOverlay();
+        }
         batch.end();
     }
 
@@ -218,8 +243,46 @@ public final class GameScreen implements Screen {
         if (input.isKeyJustPressed(reiniciarKey)) {
             resetLevelSound.play(1.0f);
             game.startLevel(level);
+            elevatorX = -1;
+            elevatorY = -1;
+            elevatorOpen = false;
             timeChronometer = 0f;
             tweenActive = false;
+        }
+    }
+
+    private void updateElevatorOverlay() {
+        if (!elevatorOpen) {
+            return;
+        }
+
+        if (input.isKeyJustPressed(UP)) {
+            selectedFloor = Math.max(1, selectedFloor - 1);
+        }
+        if (input.isKeyJustPressed(DOWN)) {
+            selectedFloor = Math.min(maxAvailableFloor, selectedFloor + 1);
+        }
+
+        selectedFloor = Math.min(selectedFloor, maxUnlockedFloor);
+
+        if (input.isKeyJustPressed(ENTER)) {
+            if (selectedFloor <= maxUnlockedFloor) {
+                level = selectedFloor;
+                elevatorX = -1;
+                elevatorY = -1;
+                timeChronometer = 0f;
+                game.startLevel(level);
+                tweenActive = false;
+                elevatorOpen = false;
+                //sonido de “ding”
+            } else {
+                //?
+            }
+            return;
+        }
+
+        if (input.isKeyJustPressed(ESCAPE)) {
+            elevatorOpen = false;
         }
     }
 
@@ -262,6 +325,13 @@ public final class GameScreen implements Screen {
         }
     }
 
+    private void elevatorInput() {
+        if (!elevatorOpen && input.isKeyJustPressed(ENTER) && isFacingElevator()) {
+            elevatorOpen = true;
+            selectedFloor = Math.min(level, maxUnlockedFloor);
+        }
+    }
+
     private Directions readHeldDirection() {
         int kUp = getCfgKey("MoverArriba", UP);
         int kDown = getCfgKey("MoverAbajo", DOWN);
@@ -295,6 +365,18 @@ public final class GameScreen implements Screen {
         } catch (Exception ignored) {
         }
         return def;
+    }
+
+    private boolean isFacingElevator() {
+        int px = game.getPlayer().getX();
+        int py = game.getPlayer().getY();
+        int nx = px + facing.dx;
+        int ny = py + facing.dy;
+
+        if (!game.getMap().isInBounds(nx, ny)) {
+            return false;
+        }
+        return game.getMap().isElevator(game.getMap().getTile(nx, ny));
     }
 
     private void enqueueDirection(Directions direction) {
@@ -333,11 +415,37 @@ public final class GameScreen implements Screen {
                         batch.draw(targetTexture, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
                         batch.draw(boxTexturePlaced, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
                         break;
+                    case TileMap.CARPET:
+                        batch.draw(carpetTexture, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
+                        break;
+                    case TileMap.ELEVATOR:
+                        // Guardar la posición del elevador; no dibujar aquí
+                        elevatorX = col;
+                        elevatorY = row;
+                        break;
                     default:
                         break;
                 }
             }
         }
+    }
+
+    private void drawElevator() {
+        if (elevatorX < 0 || elevatorY < 0) {
+            return;
+        }
+        float px = elevatorX * GameConfig.TILE_SIZE;
+        float py = elevatorY * GameConfig.TILE_SIZE;
+
+        float offsetX = (GameConfig.TILE_SIZE - elevatorTexture.getWidth()) / 2f;
+
+        batch.draw(
+                elevatorTexture,
+                px + offsetX,
+                py,
+                elevatorTexture.getWidth(),
+                elevatorTexture.getHeight()
+        );
     }
 
     private void drawPlayer() {
@@ -356,6 +464,38 @@ public final class GameScreen implements Screen {
         float w = GameConfig.TILE_SIZE;
         float h = GameConfig.TILE_SIZE * playerRatio;
         batch.draw(frame, drawX, drawY, w, h);
+    }
+
+    private void drawElevatorOverlay() {
+        // batch.setColor(0, 0, 0, 0.5f);
+        // batch.draw(algunaTexturaSemiTransparente, 0, 0, GameConfig.PX_WIDTH, GameConfig.PX_HEIGHT);
+        // batch.setColor(Color.WHITE);
+
+        String title = "Elevador: seleccionar piso";
+        font.draw(batch, title, 40, GameConfig.PX_HEIGHT - 40);
+
+        int y = GameConfig.PX_HEIGHT - 70;
+        int lineStep = 24;
+
+        for (int i = 1; i <= maxAvailableFloor; i++) {
+            boolean isSelected = (i == selectedFloor);
+            boolean isLocked = (i > maxUnlockedFloor);
+
+            String mark = isSelected ? ">" : " ";
+            String label = isLocked ? ("Piso " + i + " (bloqueado)") : ("Piso " + i);
+
+            if (isLocked) {
+                font.setColor(Color.GRAY);
+            } else {
+                font.setColor(Color.WHITE);
+            }
+
+            font.draw(batch, mark + " " + label, 60, y);
+            y -= lineStep;
+        }
+
+        font.setColor(Color.WHITE);
+        font.draw(batch, "[ARRIBA/ABAJO] Mover  [ENTER] Entrar  [ESC] Cancelar", 40, 40);
     }
 
     private void drawHUD() {
@@ -477,5 +617,7 @@ public final class GameScreen implements Screen {
         resetLevelSound.dispose();
         bgMusic.dispose();
         font.dispose();
+        elevatorTexture.dispose();
+        carpetTexture.dispose();
     }
 }

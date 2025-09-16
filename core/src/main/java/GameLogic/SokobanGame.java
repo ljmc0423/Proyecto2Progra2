@@ -6,7 +6,7 @@ public final class SokobanGame extends Game {
 
     private TileMap map;
     private Player player;
-    private int currentLevel = 1;
+    private int currentLevel = 0;
     private boolean victory;
 
     @Override
