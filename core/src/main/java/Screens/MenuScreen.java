@@ -1,7 +1,6 @@
 package Screens;
 
 import com.badlogic.gdx.Game;
-import static com.badlogic.gdx.Gdx.app;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -44,14 +43,14 @@ public class MenuScreen extends BaseScreen {
             @Override
             public void clicked(InputEvent e, float x, float y) {
                 // GameScreen no recibe SokobanGame por constructor (se crea adentro)
-                game.setScreen(new GameScreen());
+                game.setScreen(new GameScreen(game, 0));
             }
         });
 
         levelImg.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
-                game.setScreen(new GameScreen());
+                game.setScreen(new GameScreen(game, 0));
             }
         });
 

@@ -15,6 +15,7 @@ import static com.badlogic.gdx.Gdx.audio;
 import static com.badlogic.gdx.Gdx.files;
 
 import com.badlogic.gdx.Screen;
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -35,6 +36,8 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFont
 import com.elkinedwin.LogicaUsuario.ManejoUsuarios;
 
 public final class GameScreen implements Screen {
+
+    private final Game app;
 
     //Clases de libgdx
     private OrthographicCamera camera;
@@ -60,7 +63,7 @@ public final class GameScreen implements Screen {
     private boolean elevatorOpen = false;
     private int selectedFloor = 0;
     private int maxUnlockedFloor = 1;
-    private int maxAvailableFloor = 7;
+    private final int maxAvailableFloor = 7;
 
     // coords del elevador (casilla)
     private int elevatorX = -1, elevatorY = -1;
@@ -102,6 +105,11 @@ public final class GameScreen implements Screen {
 
     //nivel actual
     private int level = 0;
+
+    public GameScreen(Game app, int level) {
+        this.app = app;
+        this.level = level;
+    }
 
     @Override
     public void show() {
@@ -215,6 +223,22 @@ public final class GameScreen implements Screen {
 
         applier.apply(game.getMap(), game.getPlayer(), moveResult);
         game.recomputeVictory();
+
+        if (game.isVictory()) {
+            if (level < maxAvailableFloor) {
+                maxUnlockedFloor = Math.max(maxUnlockedFloor, level + 1);
+            }
+
+            bgMusic.stop();
+
+            int totalSec = (int) timeChronometer;
+            int moves = game.getPlayer().getMoveCount();
+            int pushes = game.getPlayer().getPushCount();
+
+            app.setScreen(new VictoryScreen(app, level, moves, pushes, totalSec, maxAvailableFloor, 0, font
+            ));
+            return;
+        }
 
         float endPX = game.getPlayer().getX() * GameConfig.TILE_SIZE;
         float endPY = game.getPlayer().getY() * GameConfig.TILE_SIZE;
@@ -467,7 +491,6 @@ public final class GameScreen implements Screen {
     }
 
     private void drawElevatorOverlay() {
-
         String title = "Elevador: seleccionar piso";
         font.draw(batch, title, 40, GameConfig.PX_HEIGHT - 40);
 
