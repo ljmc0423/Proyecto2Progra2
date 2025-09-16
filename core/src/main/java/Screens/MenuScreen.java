@@ -1,6 +1,9 @@
 package Screens;
 
 import com.badlogic.gdx.Game;
+import static com.badlogic.gdx.Gdx.audio;
+import static com.badlogic.gdx.Gdx.files;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -17,6 +20,8 @@ public class MenuScreen extends BaseScreen {
 
     private Texture titleTex, playTex, levelTex, configTex, sokobanUniverseTex, exitTex;
     private Image titleImg, playImg, levelImg, configImg, sokobanUniverseImg, exitImg;
+    
+    private Music bgMusic;
 
     public MenuScreen(Game game) {
         this.game = game;
@@ -37,10 +42,16 @@ public class MenuScreen extends BaseScreen {
         configImg = new Image(configTex);
         sokobanUniverseImg = new Image(sokobanUniverseTex);
         exitImg = new Image(exitTex);
+        
+        bgMusic = audio.newMusic(files.internal("audios/menu_bg_song.mp3"));
+        bgMusic.setLooping(true);
+        bgMusic.setVolume(0.3f);
+        bgMusic.play();
 
         playImg.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
+                bgMusic.stop();
                 game.setScreen(new GameScreen(game, 0));
             }
         });
@@ -48,6 +59,7 @@ public class MenuScreen extends BaseScreen {
         levelImg.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
+                bgMusic.stop();
                 game.setScreen(new GameScreen(game, 0));
             }
         });
@@ -105,6 +117,7 @@ public class MenuScreen extends BaseScreen {
         configTex.dispose();
         sokobanUniverseTex.dispose();
         exitTex.dispose();
+        bgMusic.dispose();
     }
 }
 
