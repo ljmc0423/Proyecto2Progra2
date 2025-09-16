@@ -26,7 +26,7 @@ public class LoginScreen extends BaseScreen {
 
     @Override
     protected void onShow() {
-        com.elkinedwin.LogicaUsuario.ManejoArchivos.iniciarAlmacenamiento();
+        com.elkinedwin.LogicaUsuario.ManejoArchivos.iniciarCpadre();
 
         titleTex = new Texture("ui/logintitle.png");
         loginTex = new Texture("ui/login.png");
@@ -129,23 +129,23 @@ public class LoginScreen extends BaseScreen {
                 }
 
                 try {
-                    String path = com.elkinedwin.LogicaUsuario.ManejoArchivos.buscarArchivoUsuario(u);
+                    String path = com.elkinedwin.LogicaUsuario.ManejoArchivos.buscarUsuario(u);
                     if (path == null) {
                         error.setText("Usuario no existe.");
                         return;
                     }
 
-                    com.elkinedwin.LogicaUsuario.ManejoArchivos.abrirArchivo(path);
-                    com.elkinedwin.LogicaUsuario.LeerArchivo.usarArchivo(
-                            com.elkinedwin.LogicaUsuario.ManejoArchivos.archivoAbierto
-                    );
+                    // Abrir/ajustar RAFs para ese usuario
+                    com.elkinedwin.LogicaUsuario.ManejoArchivos.setArchivo(u);
 
                     long ahora = System.currentTimeMillis();
                     com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo =
                             new com.elkinedwin.LogicaUsuario.Usuario(u, "", "", ahora);
 
+                    // Cargar todo desde los 4 archivos abiertos
                     com.elkinedwin.LogicaUsuario.LeerArchivo.cargarUsuario();
 
+                    // Validar contraseña
                     String passArchivo = com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo.getContrasena();
                     if (passArchivo == null || !passArchivo.equals(p)) {
                         com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo = null;
@@ -153,14 +153,13 @@ public class LoginScreen extends BaseScreen {
                         return;
                     }
 
+                    // Sesiones: anterior = la que esté guardada; actual = ahora (no se guarda)
                     Long anterior = com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo.getUltimaSesion();
                     if (anterior == null) anterior = 0L;
                     com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo.sesionAnterior = anterior;
                     com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo.sesionActual = System.currentTimeMillis();
 
-                    com.elkinedwin.LogicaUsuario.ArchivoGuardar.setArchivo(
-                            com.elkinedwin.LogicaUsuario.ManejoArchivos.archivoAbierto
-                    );
+                    // Guardar fechas: fechaRegistro y ultimaSesion (usando sesionAnterior)
                     com.elkinedwin.LogicaUsuario.ArchivoGuardar.guardarFechas();
 
                     dialog.hide();
@@ -232,7 +231,7 @@ public class LoginScreen extends BaseScreen {
                 }
 
                 try {
-                    String existe = com.elkinedwin.LogicaUsuario.ManejoArchivos.buscarArchivoUsuario(u);
+                    String existe = com.elkinedwin.LogicaUsuario.ManejoArchivos.buscarUsuario(u);
                     if (existe != null) {
                         error.setText("El usuario ya existe.");
                         return;

@@ -8,116 +8,136 @@ import java.util.Calendar;
 
 public class ManejoArchivos {
 
+    // Carpeta base y referencias actuales
     public static File carpetaUsuarios;
-    public static RandomAccessFile archivoAbierto;
+    public static File carpetaUsuarioActual;
 
-    public static void iniciarAlmacenamiento() {
+    public static RandomAccessFile archivoDatos;
+    public static RandomAccessFile archivoProgreso;
+    public static RandomAccessFile archivoPartidas;
+    public static RandomAccessFile archivoConfig;
+
+    public static void iniciarCpadre() {
         if (carpetaUsuarios == null) carpetaUsuarios = new File("Usuarios");
         if (!carpetaUsuarios.exists()) carpetaUsuarios.mkdirs();
     }
 
-    private static void asegurarCarpeta() {
-        if (carpetaUsuarios == null || !carpetaUsuarios.exists()) {
-            iniciarAlmacenamiento();
+    public static String buscarUsuario(String usuario) {
+        if (usuario == null) return null;
+        iniciarCpadre();
+        String base = usuario.trim();
+        if (base.isEmpty()) return null;
+        File dir = new File(carpetaUsuarios, base);
+        return dir.isDirectory() ? dir.getPath() : null;
+    }
+
+    
+    public static String buscarArchivoUsuario(String usuario) {
+        return buscarUsuario(usuario);
+    }
+
+  
+    public static void setArchivo(String usuario) throws IOException {
+        iniciarCpadre();
+        if (usuario == null || usuario.trim().isEmpty())
+            throw new FileNotFoundException("Usuario vacío.");
+
+        carpetaUsuarioActual = new File(carpetaUsuarios, usuario);
+        if (!carpetaUsuarioActual.isDirectory()){
+            throw new FileNotFoundException("No existe el usuario: " + usuario);
         }
+        
+        archivoDatos    = new RandomAccessFile(new File(carpetaUsuarioActual, "Datos.bin"), "rw");
+        archivoProgreso = new RandomAccessFile(new File(carpetaUsuarioActual, "Progreso.bin"), "rw");
+        archivoPartidas = new RandomAccessFile(new File(carpetaUsuarioActual, "Partidas.bin"), "rw");
+        archivoConfig   = new RandomAccessFile(new File(carpetaUsuarioActual, "Config.bin"), "rw");
     }
 
-    private static RandomAccessFile crearArchivoUsuario(String base) throws FileNotFoundException {
-        asegurarCarpeta();
-        return new RandomAccessFile(new File(carpetaUsuarios, base + ".bin"), "rw");
-    }
-
-    /*
-    Formato:
-    0-6  : boolean[7] niveles completados
-    7     : int[7]  MayorPuntuacion
-    35    : int     TiempoTotalJugado
-    39    : int     PuntuacionGeneral
-    43    : int     TotalPartidas
-    47    : int[7]  PartidasPorNivel
-    77    : int     Volumen
-    81    : int[5]  KeyCodes (Arriba, Abajo, Derecha, Izquierda, Reiniciar)
-    101   : int[7]  TiempoPorNivel
-    129   : int     Idioma
-    133   : long    FechaRegistro
-    141   : long    UltimaSesion (siempre la ANTERIOR)
-    149   : UTF     Nombre
-           UTF     Datos: "Usuario,Password,Partidas(Fecha.Intentos.Logros.Tiempo[>...]),ImagenPath,"
-           (ImagenPath por defecto: ../Imagenes/Ulogo.png)
-    */
+    
     public static void crearUsuario(String nombre, String usuario, String contrasena) throws IOException {
-        asegurarCarpeta();
+        iniciarCpadre();
+        if (usuario == null || usuario.trim().isEmpty())
+            throw new IOException("Usuario invalido");
 
-        RandomAccessFile f = crearArchivoUsuario(usuario);
+        File dir = new File(carpetaUsuarios, usuario);
+        if (dir.exists())
+            throw new IOException("El usuario ya existe");
 
-        f.seek(0);
-        for (int i = 0; i < 7; i++) f.writeBoolean(false);
-
-        f.seek(7);
-        for (int i = 0; i < 7; i++) f.writeInt(0);
-
-        f.seek(35); f.writeInt(0);
-        f.seek(39); f.writeInt(0);
-        f.seek(43); f.writeInt(0);
-
-        f.seek(47);
-        for (int i = 0; i < 7; i++) f.writeInt(0);
-
-        f.seek(77); f.writeInt(80);
-
-        f.seek(81);
-        f.writeInt(19);
-        f.writeInt(20);
-        f.writeInt(22);
-        f.writeInt(21);
-        f.writeInt(46);
-
-        f.seek(101);
-        for (int i = 0; i < 7; i++) f.writeInt(0);
-
-        f.seek(129); f.writeInt(1);
+        if (!dir.mkdirs())
+            throw new IOException("No se pudo crear la carpeta del usuario.");
 
         long ahora = Calendar.getInstance().getTimeInMillis();
-        f.seek(133); f.writeLong(ahora);
-        f.seek(141); f.writeLong(ahora);
 
-        f.seek(149);
-        f.writeUTF(nombre == null ? "" : nombre);
-
+        // ===== Datos.bin =====
+        archivoDatos = new RandomAccessFile(new File(dir, "Datos.bin"), "rw");
+        // [0] FechaRegistro, [8] UltimaSesion
+        archivoDatos.seek(0);
+        archivoDatos.writeLong(ahora);
+        archivoDatos.writeLong(ahora);
+        // [16] Nombre (UTF)
+        archivoDatos.seek(16);
+        archivoDatos.writeUTF(nombre == null ? "" : nombre);
+        //  UTF: "usuario,contrasena,imagen,"
         String imgDefecto = "../Imagenes/Ulogo.png";
         StringBuilder datos = new StringBuilder();
         datos.append(usuario == null ? "" : usuario).append(',')
              .append(contrasena == null ? "" : contrasena).append(',')
-             .append("...").append(',')
              .append(imgDefecto).append(',');
-        f.writeUTF(datos.toString());
+        archivoDatos.writeUTF(datos.toString());
+        archivoDatos.getFD().sync();
 
+        // ===== Progreso.bin =====
+        archivoProgreso = new RandomAccessFile(new File(dir, "Progreso.bin"), "rw");
+        // [0..6] boolean[7] niveles completados
+        archivoProgreso.seek(0);
+        for (int i = 0; i < 7; i++) archivoProgreso.writeBoolean(false);
+        // [7] int[7] mayor puntuación
+        archivoProgreso.seek(7);
+        for (int i = 0; i < 7; i++) archivoProgreso.writeInt(0);
+        // [35] int tiempo total
+        archivoProgreso.seek(35); archivoProgreso.writeInt(0);
+        // [39] int puntuación general
+        archivoProgreso.seek(39); archivoProgreso.writeInt(0);
+        // [43] int partidas totales
+        archivoProgreso.seek(43); archivoProgreso.writeInt(0);
+        // [47] int[7] partidas por nivel
+        archivoProgreso.seek(47);
+        for (int i = 0; i < 7; i++) archivoProgreso.writeInt(0);
+        // [101] int[7] tiempo por nivel
+        archivoProgreso.seek(101);
+        for (int i = 0; i < 7; i++) archivoProgreso.writeInt(0);
+        archivoProgreso.getFD().sync();
+
+        // ===== Config.bin =====
+        archivoConfig = new RandomAccessFile(new File(dir, "Config.bin"), "rw");
+        
+        archivoConfig.seek(0);  
+        archivoConfig.writeInt(80);
+        archivoConfig.seek(4);  
+        archivoConfig.writeInt(19); 
+        archivoConfig.seek(8);  
+        archivoConfig.writeInt(20); 
+        archivoConfig.seek(12); 
+        archivoConfig.writeInt(22); 
+        archivoConfig.seek(16); 
+        archivoConfig.writeInt(21); 
+        archivoConfig.seek(20); 
+        archivoConfig.writeInt(46); 
+        archivoConfig.seek(24); 
+        archivoConfig.writeInt(1);
+        archivoConfig.getFD().sync();
+
+        // ===== Partidas.bin =====
+       
+        archivoPartidas = new RandomAccessFile(new File(dir, "Partidas.bin"), "rw");
+        
+        archivoPartidas.setLength(0);
+        archivoPartidas.getFD().sync();
+
+        
         ManejoUsuarios.UsuarioActivo = new Usuario(usuario, nombre, contrasena, ahora);
-        ManejoUsuarios.UsuarioActivo.setAvatar(imgDefecto);
-    }
+        
 
-    public static String buscarArchivoUsuario(String usuario) {
-        if (usuario == null) return null;
-        asegurarCarpeta();
-        String base = quitarExtBin(usuario).trim();
-        if (base.isEmpty()) return null;
-        File f = new File(carpetaUsuarios, base + ".bin");
-        return f.isFile() ? f.getPath() : null;
-    }
-
-    private static String quitarExtBin(String s) {
-        int p = s.lastIndexOf('.');
-        return (p >= 0) ? s.substring(0, p) : s;
-    }
-
-    public static void abrirArchivo(String ruta) throws FileNotFoundException {
-        archivoAbierto = new RandomAccessFile(ruta, "rw");
-    }
-
-    public static void abrirArchivoDeUsuario(String usuario) throws IOException {
-        asegurarCarpeta();
-        String path = buscarArchivoUsuario(usuario);
-        if (path == null) throw new FileNotFoundException("No existe el usuario: " + usuario);
-        archivoAbierto = new RandomAccessFile(path, "rw");
+        carpetaUsuarioActual = dir;
     }
 }

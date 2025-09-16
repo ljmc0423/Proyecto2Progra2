@@ -5,149 +5,161 @@ import java.io.RandomAccessFile;
 
 public class ArchivoGuardar {
 
-    private static RandomAccessFile archivo;
-
-    public static void setArchivo(RandomAccessFile ref){
-        archivo = ref;
-    }
+    // ===== PROGRESO.BIN =====
 
     public static void guardarNivelesCompletados() throws IOException{
-        archivo.seek(0);
+        RandomAccessFile f = ManejoArchivos.archivoProgreso;
+        f.seek(0);
         for (int i = 1; i < 8; i++) {
-            archivo.writeBoolean(ManejoUsuarios.UsuarioActivo.getNivelCompletado(i));
+            f.writeBoolean(ManejoUsuarios.UsuarioActivo.getNivelCompletado(i));
         }
     }
 
     public static void guardarMayorPuntuacion() throws IOException{
-        archivo.seek(7);
+        RandomAccessFile f = ManejoArchivos.archivoProgreso;
+        f.seek(7);
         for (int i = 1; i < 8; i++) {
-            archivo.writeInt(ManejoUsuarios.UsuarioActivo.getMayorPuntuacion(i));
+            f.writeInt(ManejoUsuarios.UsuarioActivo.getMayorPuntuacion(i));
         }
     }
 
     public static void guardarTiempoTotal() throws IOException{
-        archivo.seek(35);
-        archivo.writeInt(ManejoUsuarios.UsuarioActivo.getTiempoJugadoTotal());
+        RandomAccessFile f = ManejoArchivos.archivoProgreso;
+        f.seek(35);
+        f.writeInt(ManejoUsuarios.UsuarioActivo.getTiempoJugadoTotal());
     }
 
     public static void guardarPuntuacionGeneral() throws IOException{
-        archivo.seek(39);
-        archivo.writeInt(ManejoUsuarios.UsuarioActivo.getPuntuacionGeneral());
+        RandomAccessFile f = ManejoArchivos.archivoProgreso;
+        f.seek(39);
+        f.writeInt(ManejoUsuarios.UsuarioActivo.getPuntuacionGeneral());
     }
 
     public static void guardarTotalPartidas() throws IOException{
-        archivo.seek(43);
-        archivo.writeInt(ManejoUsuarios.UsuarioActivo.getPartidasTotales());
+        RandomAccessFile f = ManejoArchivos.archivoProgreso;
+        f.seek(43);
+        f.writeInt(ManejoUsuarios.UsuarioActivo.getPartidasTotales());
     }
 
     public static void guardarPartidasPorNivel() throws IOException{
-        archivo.seek(47);
+        RandomAccessFile f = ManejoArchivos.archivoProgreso;
+        f.seek(47);
         for (int i = 1; i < 8; i++) {
-            archivo.writeInt(ManejoUsuarios.UsuarioActivo.getPartidasPorNivel(i));
+            f.writeInt(ManejoUsuarios.UsuarioActivo.getPartidasPorNivel(i));
         }
     }
 
+    public static void guardarTiempoPorNivel() throws IOException{
+        RandomAccessFile f = ManejoArchivos.archivoProgreso;
+        f.seek(101);
+        for (int i = 1; i < 8; i++) {
+            f.writeInt(ManejoUsuarios.UsuarioActivo.getTiempoPorNivel(i));
+        }
+    }
+
+    // ===== CONFIG.BIN =====
+
     public static void guardarConfiguracion() throws IOException{
-        archivo.seek(77);
+        RandomAccessFile f = ManejoArchivos.archivoConfig;
 
         int vol       = ManejoUsuarios.UsuarioActivo.getConfiguracion("Volumen");
         int arriba    = ManejoUsuarios.UsuarioActivo.getConfiguracion("MoverArriba");
         int abajo     = ManejoUsuarios.UsuarioActivo.getConfiguracion("MoverAbajo");
-
-      
-        int derecha   = ManejoUsuarios.UsuarioActivo.getConfiguracion("MoverDere");
-        if (derecha == 0) derecha = ManejoUsuarios.UsuarioActivo.getConfiguracion("MoverDer");
-
+        int derecha   = ManejoUsuarios.UsuarioActivo.getConfiguracion("MoverDer");
         int izquierda = ManejoUsuarios.UsuarioActivo.getConfiguracion("MoverIzq");
         int reiniciar = ManejoUsuarios.UsuarioActivo.getConfiguracion("Reiniciar");
+        int idioma    = ManejoUsuarios.UsuarioActivo.getConfiguracion("Idioma");
 
-        archivo.writeInt(vol);
-        archivo.writeInt(arriba);
-        archivo.writeInt(abajo);
-        archivo.writeInt(derecha);
-        archivo.writeInt(izquierda);
-        archivo.writeInt(reiniciar);
-
-        
-        archivo.seek(129);
-        archivo.writeInt(ManejoUsuarios.UsuarioActivo.getConfiguracion("Idioma"));
+        f.seek(0);  f.writeInt(vol);
+        f.seek(4);  f.writeInt(arriba);
+        f.seek(8);  f.writeInt(abajo);
+        f.seek(12); f.writeInt(derecha);
+        f.seek(16); f.writeInt(izquierda);
+        f.seek(20); f.writeInt(reiniciar);
+        f.seek(24); f.writeInt(idioma);
     }
 
-    public static void guardarTiempoPorNivel() throws IOException{
-        archivo.seek(101);
-        for (int i = 1; i < 8; i++) {
-            archivo.writeInt(ManejoUsuarios.UsuarioActivo.getTiempoPorNivel(i));
-        }
-    }
+    // ===== DATOS.BIN =====
 
-    
     public static void guardarFechas() throws IOException{
-        archivo.seek(133);
-        long reg = ManejoUsuarios.UsuarioActivo.getFechaRegistro() == null ? 0L : ManejoUsuarios.UsuarioActivo.getFechaRegistro();
-        archivo.writeLong(reg);
+        RandomAccessFile f = ManejoArchivos.archivoDatos;
 
-        archivo.seek(141);
+        // FechaRegistro
+        long reg = ManejoUsuarios.UsuarioActivo.getFechaRegistro() == null ? 0L : ManejoUsuarios.UsuarioActivo.getFechaRegistro();
+        f.seek(0);
+        f.writeLong(reg);
+
+        // UltimaSesion (guardamos la "anterior")
         Long anterior = ManejoUsuarios.UsuarioActivo.sesionAnterior;
         if (anterior == null) anterior = ManejoUsuarios.UsuarioActivo.getUltimaSesion();
         if (anterior == null) anterior = 0L;
-        archivo.writeLong(anterior);
+        f.seek(8);
+        f.writeLong(anterior);
     }
 
-  
     public static void guardarDatosUTF() throws IOException {
-        archivo.seek(149);
+        RandomAccessFile f = ManejoArchivos.archivoDatos;
 
-        
-        archivo.writeUTF(ManejoUsuarios.UsuarioActivo.getNombre());
+        // Nombre
+        f.seek(16);
+        f.writeUTF(ManejoUsuarios.UsuarioActivo.getNombre() == null ? "" : ManejoUsuarios.UsuarioActivo.getNombre());
 
-        
+        // "usuario,contrasena,imagen,"
         StringBuilder datos = new StringBuilder();
-
         String usuario  = ManejoUsuarios.UsuarioActivo.getUsuario();
         String pass     = ManejoUsuarios.UsuarioActivo.getContrasena();
+        String imgPath  = ManejoUsuarios.UsuarioActivo.avatar;
 
         datos.append(usuario == null ? "" : usuario)
              .append(',')
              .append(pass == null ? "" : pass)
+             .append(',')
+             .append(imgPath == null ? "" : imgPath)
              .append(',');
 
-        
-        if (ManejoUsuarios.UsuarioActivo.historial == null ||
-            ManejoUsuarios.UsuarioActivo.historial.isEmpty()) {
-            datos.append("...");
-        } else {
-            for (int i = 0; i < ManejoUsuarios.UsuarioActivo.historial.size(); i++) {
-                Partida p = ManejoUsuarios.UsuarioActivo.historial.get(i);
-
-                String fecha    = (p.getFecha()  == null) ? "" : p.getFecha();
-                String intentos = String.valueOf(p.getIntentos());
-                String logros   = (p.getLogros() == null) ? "" : p.getLogros();
-                String tiempo   = String.valueOf(p.getTiempo());
-
-                datos.append(fecha).append('.')
-                     .append(intentos).append('.')
-                     .append(logros).append('.')
-                     .append(tiempo);
-
-                if (i < ManejoUsuarios.UsuarioActivo.historial.size() - 1) {
-                    datos.append('>');
-                }
-            }
-        }
-
-        datos.append(',');
-
-        
-        String imgPath = ManejoUsuarios.UsuarioActivo.avatar;
-        datos.append(imgPath == null ? "" : imgPath)
-             .append(',');
-
-        archivo.writeUTF(datos.toString());
+        f.writeUTF(datos.toString());
     }
 
-    
+    // ===== PARTIDAS.BIN =====
+    public static void guardarPartidas() throws IOException {
+        RandomAccessFile f = ManejoArchivos.archivoPartidas;
+
+        if (ManejoUsuarios.UsuarioActivo.historial == null || ManejoUsuarios.UsuarioActivo.historial.isEmpty()) {
+            
+            f.setLength(0);
+            return;
+        }
+
+        f.seek(0);
+        int count = ManejoUsuarios.UsuarioActivo.historial.size();
+        f.writeInt(count);
+
+        for (int i = 0; i < count; i++) {
+            Partida p = ManejoUsuarios.UsuarioActivo.historial.get(i);
+
+            String fecha    = (p.getFecha()  == null) ? "" : p.getFecha();
+            int intentos    = p.getIntentos();
+            String logros   = (p.getLogros() == null) ? "" : p.getLogros();
+            int tiempo      = p.getTiempo();
+
+            f.writeUTF(fecha);
+            f.writeInt(intentos);
+            f.writeUTF(logros);
+            f.writeInt(tiempo);
+        }
+        // si se reescribe menos que antes, opcional: truncar a posición actual
+        // f.setLength(f.getFilePointer());
+    }
+
+    // ===== AGRUPADOR =====
+
     public static void guardarTodo() throws IOException {
-        if (archivo == null) throw new IOException("Archivo no listo.");
+        if (ManejoArchivos.archivoDatos == null ||
+            ManejoArchivos.archivoProgreso == null ||
+            ManejoArchivos.archivoPartidas == null ||
+            ManejoArchivos.archivoConfig == null) {
+            throw new IOException("Archivos no listos.");
+        }
 
         guardarNivelesCompletados();
         guardarMayorPuntuacion();
@@ -155,20 +167,28 @@ public class ArchivoGuardar {
         guardarPuntuacionGeneral();
         guardarTotalPartidas();
         guardarPartidasPorNivel();
-        guardarConfiguracion();
         guardarTiempoPorNivel();
-        guardarFechas();      
+
+        guardarConfiguracion();
+
+        guardarFechas();
         guardarDatosUTF();
+
+        guardarPartidas();
     }
 
-    
     public static void guardarTodoCerrarSesion() throws IOException {
-        if (archivo == null) throw new IOException("Archivo no listo.");
+        if (ManejoArchivos.archivoDatos == null ||
+            ManejoArchivos.archivoProgreso == null ||
+            ManejoArchivos.archivoPartidas == null ||
+            ManejoArchivos.archivoConfig == null) {
+            throw new IOException("Archivos no listos.");
+        }
 
+        // Actualizamos la "anterior" a ahora (sesionActual no se guarda en archivo)
         if (ManejoUsuarios.UsuarioActivo != null) {
-            Long actual = ManejoUsuarios.UsuarioActivo.sesionActual;
-            if (actual == null) actual = System.currentTimeMillis();
-            ManejoUsuarios.UsuarioActivo.sesionAnterior = actual;
+            Long ahora = System.currentTimeMillis();
+            ManejoUsuarios.UsuarioActivo.sesionAnterior = ahora;
         }
 
         guardarTodo();

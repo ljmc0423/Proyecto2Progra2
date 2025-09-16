@@ -4,7 +4,7 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.elkinedwin.LogicaUsuario.SokobanMain;
 
-public class Lwjgl3Launcher {
+public class Main {
 
     public static void main(String[] args) {
         createApplication();

@@ -9,7 +9,6 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 
 // Guardado / usuarios
 import com.elkinedwin.LogicaUsuario.ArchivoGuardar;
-import com.elkinedwin.LogicaUsuario.ManejoArchivos;
 import com.elkinedwin.LogicaUsuario.ManejoUsuarios;
 
 public class MenuScreen extends BaseScreen {
@@ -42,7 +41,6 @@ public class MenuScreen extends BaseScreen {
         playImg.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
-                // GameScreen no recibe SokobanGame por constructor (se crea adentro)
                 game.setScreen(new GameScreen(game, 0));
             }
         });
@@ -68,17 +66,15 @@ public class MenuScreen extends BaseScreen {
             }
         });
 
-       
         exitImg.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
                 try {
-                    ArchivoGuardar.setArchivo(ManejoArchivos.archivoAbierto);
+                    // Guarda en datos.bin, progreso.bin, config.bin y partidas.bin
                     ArchivoGuardar.guardarTodoCerrarSesion();
                 } catch (Exception ex) {
-                   
+                    // opcional: logging
                 } finally {
-                   
                     ManejoUsuarios.UsuarioActivo = null;
                     game.setScreen(new LoginScreen(game));
                 }
