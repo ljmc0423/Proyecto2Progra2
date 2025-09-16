@@ -20,7 +20,7 @@ public class MenuScreen extends BaseScreen {
 
     private Texture titleTex, playTex, levelTex, configTex, sokobanUniverseTex, exitTex;
     private Image titleImg, playImg, levelImg, configImg, sokobanUniverseImg, exitImg;
-    
+
     private Music bgMusic;
 
     public MenuScreen(Game game) {
@@ -42,7 +42,7 @@ public class MenuScreen extends BaseScreen {
         configImg = new Image(configTex);
         sokobanUniverseImg = new Image(sokobanUniverseTex);
         exitImg = new Image(exitTex);
-        
+
         bgMusic = audio.newMusic(files.internal("audios/menu_bg_song.mp3"));
         bgMusic.setLooping(true);
         bgMusic.setVolume(0.3f);
@@ -51,7 +51,6 @@ public class MenuScreen extends BaseScreen {
         playImg.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
-                bgMusic.stop();
                 game.setScreen(new GameScreen(game, 0));
             }
         });
@@ -59,7 +58,6 @@ public class MenuScreen extends BaseScreen {
         levelImg.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
-                bgMusic.stop();
                 game.setScreen(new GameScreen(game, 0));
             }
         });
@@ -110,14 +108,28 @@ public class MenuScreen extends BaseScreen {
 
     @Override
     public void dispose() {
+        hide();
         super.dispose();
-        titleTex.dispose();
-        playTex.dispose();
-        levelTex.dispose();
-        configTex.dispose();
-        sokobanUniverseTex.dispose();
-        exitTex.dispose();
+    }
+
+    @Override
+    public void hide() {
+        bgMusic.stop();
         bgMusic.dispose();
+        bgMusic = null;
+        titleTex.dispose();
+        titleTex = null;
+        playTex.dispose();
+        playTex = null;
+        levelTex.dispose();
+        levelTex = null;
+        configTex.dispose();
+        configTex = null;
+        sokobanUniverseTex.dispose();
+        sokobanUniverseTex = null;
+        exitTex.dispose();
+        exitTex = null;
+        
+        super.hide();
     }
 }
-
