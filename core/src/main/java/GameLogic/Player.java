@@ -7,9 +7,9 @@ public final class Player {
     private int moveCount;
     private int pushCount;
 
-    public Player(Position start) {
-        this.x = start.getX();
-        this.y = start.getY();
+    public Player(int startX, int startY) {
+        this.x = startX;
+        this.y = startY;
     }
 
     public int getX() {
@@ -20,10 +20,6 @@ public final class Player {
         return y;
     }
 
-    public Position getPosition() {
-        return new Position(x, y);
-    }
-
     public int getMoveCount() {
         return moveCount;
     }
@@ -32,16 +28,13 @@ public final class Player {
         return pushCount;
     }
 
-    public void applyStep(int newXPos, int newYPos) {
-        this.x = newXPos;
-        this.y = newYPos;
-        this.moveCount++;
-    }
-
-    public void applyPush(int newXPos, int newYPos) {
-        this.x = newXPos;
-        this.y = newYPos;
-        this.moveCount++;
-        this.pushCount++;
+    public void moveTo(int newX, int newY, boolean pushed) {
+        this.x = newX;
+        this.y = newY;
+        moveCount++;
+        
+        if (pushed) {
+            pushCount++;
+        }
     }
 }

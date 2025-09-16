@@ -45,13 +45,13 @@ public class MenuScreen extends BaseScreen {
 
         bgMusic = audio.newMusic(files.internal("audios/menu_bg_song.mp3"));
         bgMusic.setLooping(true);
-        bgMusic.setVolume(0.3f);
+        bgMusic.setVolume(0.5f);
         bgMusic.play();
 
         playImg.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
-                game.setScreen(new GameScreen(game, 0));
+                game.setScreen(new GameScreen(game, 2));
             }
         });
 

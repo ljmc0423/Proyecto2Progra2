@@ -17,10 +17,10 @@ public final class SokobanGame extends Game {
         try {
             LevelData data = loader.load();
             this.map = data.getTileMap();
-            this.player = new Player(data.getPlayerInitialPosition());
+            this.player = new Player(data.getPlayerStartX(), data.getPlayerStartY());
             this.victory = checkVictory();
         } catch (IOException e) {
-            throw new RuntimeException("Error cargando nivel: " + path, e); 
+            throw new RuntimeException("Error cargando nivel: " + path, e);
         }
     }
 
@@ -39,10 +39,9 @@ public final class SokobanGame extends Game {
     }
 
     private boolean checkVictory() {
-        //si hay cajas, significa que aún no se ha completado el nivel
         for (int y = 0; y < GameConfig.ROWS; y++) {
             for (int x = 0; x < GameConfig.COLS; x++) {
-                if (map.getTile(x, y) == TileMap.BOX || map.getTile(x, y) == TileMap.ELEVATOR) {
+                if (map.getTile(x, y) == TileMap.BOX) {
                     return false;
                 }
             }

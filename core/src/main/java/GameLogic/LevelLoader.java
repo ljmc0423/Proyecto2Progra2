@@ -15,25 +15,25 @@ public class LevelLoader {
 
     public LevelData load() throws IOException {
         char[][] data = new char[GameConfig.ROWS][GameConfig.COLS];
-        Position start = null;
+        int startX = -1, startY = -1;
 
         try (BufferedReader br = new BufferedReader(new FileReader(levelFile))) {
             for (int y = 0; y < GameConfig.ROWS; y++) {
                 String line = br.readLine();
-
                 for (int x = 0; x < GameConfig.COLS; x++) {
                     char ch = line.charAt(x);
 
                     if (ch == TileMap.PLAYER || ch == TileMap.PLAYER_ON_TARGET) {
-                        start = new Position(x, y);
+                        startX = x;
+                        startY = y;
                         ch = (ch == TileMap.PLAYER_ON_TARGET) ? TileMap.TARGET : TileMap.FLOOR;
                     }
 
-                    data[y][x] = ch; //importante: como empieza desde el principio al final el mapa queda volteado
+                    data[y][x] = ch;
                 }
             }
         }
 
-        return new LevelData(new TileMap(data), start);
+        return new LevelData(new TileMap(data), startX, startY);
     }
 }

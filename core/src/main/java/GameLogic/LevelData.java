@@ -3,18 +3,24 @@ package GameLogic;
 public class LevelData {
 
     private final TileMap tileMap;
-    private final Position playerInitialPosition;
+    private final int playerStartX;
+    private final int playerStartY;
 
-    public LevelData(TileMap tileMap, Position playerInitialPosition) {
+    public LevelData(TileMap tileMap, int playerStartX, int playerStartY) {
         this.tileMap = tileMap;
-        this.playerInitialPosition = playerInitialPosition;
+        this.playerStartX = playerStartX;
+        this.playerStartY = playerStartY;
     }
 
     public TileMap getTileMap() {
         return tileMap;
     }
 
-    public Position getPlayerInitialPosition() {
-        return playerInitialPosition;
+    public int getPlayerStartX() {
+        return playerStartX;
+    }
+
+    public int getPlayerStartY() {
+        return playerStartY;
     }
 }
