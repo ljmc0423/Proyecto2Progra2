@@ -419,7 +419,7 @@ public final class GameScreen implements Screen {
                         batch.draw(carpetTexture, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
                         break;
                     case TileMap.ELEVATOR:
-                        // Guardar la posición del elevador; no dibujar aquí
+                        // Guardar la posición del elevador, no se dibuja aquí
                         elevatorX = col;
                         elevatorY = row;
                         break;
@@ -467,9 +467,6 @@ public final class GameScreen implements Screen {
     }
 
     private void drawElevatorOverlay() {
-        // batch.setColor(0, 0, 0, 0.5f);
-        // batch.draw(algunaTexturaSemiTransparente, 0, 0, GameConfig.PX_WIDTH, GameConfig.PX_HEIGHT);
-        // batch.setColor(Color.WHITE);
 
         String title = "Elevador: seleccionar piso";
         font.draw(batch, title, 40, GameConfig.PX_HEIGHT - 40);
