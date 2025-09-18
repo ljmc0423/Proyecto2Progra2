@@ -16,7 +16,6 @@ public final class StageScreen extends BasePlayScreen {
 
     private Elevator elevator;
 
-    // Posición del elevador (tu '?' estaba en x=16, y=12)
     private final int ex = 16, ey = 12;
 
     public StageScreen(Game app) {
