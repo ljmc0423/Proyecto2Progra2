@@ -18,17 +18,32 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import GameLogic.Directions;
 import GameLogic.GameConfig;
+import GameLogic.MovementThread;
 import GameLogic.Player;
+import GameLogic.SokobanGame;
+import GameLogic.TileMap;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
+import com.elkinedwin.LogicaUsuario.Usuario;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 public abstract class BasePlayScreen implements Screen {
 
     protected final Game app;
+    protected final SokobanGame game = new SokobanGame();
 
     //clases de libgdx
     protected OrthographicCamera camera;
     protected FitViewport viewport;
     protected SpriteBatch batch;
+
+    //nivel actual
+    protected final int level;
+
+    // Hilo y cola
+    protected BlockingQueue<Directions> directionQueue;
+    protected MovementThread movementThreadLogic;
+    protected Thread movementThread;
 
     //Font
     protected BitmapFont font;
@@ -42,21 +57,18 @@ public abstract class BasePlayScreen implements Screen {
     protected Texture[] downFrames, upFrames, leftFrames, rightFrames;
 
     //Audio
-    protected Sound stepSound, resetLevelSound;
+    protected Sound stepSound, resetLevelSound, boxPlacedSound;
     protected Music bgMusic;
+
+    // Para detectar movimiento entre frames
+    protected int prevX, prevY;
+    protected boolean moveRequested = false;
 
     // Estado de animación
     protected Directions facing = Directions.DOWN;
 
     protected float playerRatio = 1f;
-
     protected Player player;
-
-    protected void setPlayer(Player player) {
-        this.player = player;
-        this.drawPX = player.getX() * GameConfig.TILE_SIZE;
-        this.drawPY = player.getY() * GameConfig.TILE_SIZE;
-    }
 
     //tween = in between
     protected boolean tweenActive = false;
@@ -73,8 +85,18 @@ public abstract class BasePlayScreen implements Screen {
     // Cronómetro
     protected float timeChronometer = 0f;
 
-    public BasePlayScreen(Game app) {
+    //útil para sonido de box on target
+    protected int prevPushes;
+
+    public BasePlayScreen(Game app, int level) {
         this.app = app;
+        this.level = level;
+    }
+
+    protected void setPlayer(Player player) {
+        this.player = player;
+        this.drawPX = player.getX() * GameConfig.TILE_SIZE;
+        this.drawPY = player.getY() * GameConfig.TILE_SIZE;
     }
 
     @Override
@@ -82,6 +104,20 @@ public abstract class BasePlayScreen implements Screen {
         camera = new OrthographicCamera();
         viewport = new FitViewport(GameConfig.PX_WIDTH, GameConfig.PX_HEIGHT, camera);
         batch = new SpriteBatch();
+
+        game.startLevel(level);
+
+        // Enlazar jugador para BasePlayScreen (para dibujarlo)
+        setPlayer(game.getPlayer());
+
+        directionQueue = new ArrayBlockingQueue<>(1);
+        movementThreadLogic = new MovementThread(directionQueue, game.getMap(), game.getPlayer());
+        movementThread = new Thread(movementThreadLogic);
+        movementThread.setDaemon(true);
+        movementThread.start();
+
+        prevX = game.getPlayer().getX();
+        prevY = game.getPlayer().getY();
 
         loadCommonAssets();
         onShowExtra();
@@ -125,6 +161,16 @@ public abstract class BasePlayScreen implements Screen {
 
     @Override
     public void dispose() {
+        try {
+            if (movementThreadLogic != null) {
+                movementThreadLogic.stop();
+            }
+            if (movementThread != null) {
+                movementThread.interrupt();
+            }
+        } catch (Exception ignored) {
+        }
+
         onDisposeExtra();
         batch.dispose();
         disposeCommonAssets();
@@ -132,20 +178,111 @@ public abstract class BasePlayScreen implements Screen {
 
     protected abstract void onShowExtra();
 
-    protected abstract void onUpdate(float delta);
-
     protected abstract void onDrawMap();
 
     protected abstract void onDrawHUD();
 
     protected abstract void onDisposeExtra();
 
-    protected Texture load(String path) {
-        return new Texture(files.internal(path));
+    protected void onUpdate(float delta) {
+        if (!tweenActive) {
+            handleHeldInput(delta);
+        }
+
+        detectAndAnimateMovement();
+
+        if (moveRequested && !tweenActive && directionQueue.isEmpty()) {
+            Player p = game.getPlayer();
+            if (p.getX() == prevX && p.getY() == prevY) {
+                moveRequested = false;
+            }
+        }
     }
 
-    protected Sound loadSound(String path) {
-        return audio.newSound(files.internal(path));
+    private void handleHeldInput(float delta) {
+        if (tweenActive || moveRequested) {
+            return;
+        }
+        Directions currentHeld = readHeldDirection();
+        if (currentHeld == null) {
+            heldDirection = null;
+            holdTimer = 0f;
+            return;
+        }
+
+        if (heldDirection == null || currentHeld != heldDirection) {
+            heldDirection = currentHeld;
+            holdTimer = 0f;
+            enqueueDirection(heldDirection);
+            facing = heldDirection;
+            return;
+        }
+
+        holdTimer += delta;
+        if (holdTimer >= initialDelay) {
+            float over = holdTimer - initialDelay;
+            while (over >= repeatRate && !moveRequested) {
+                enqueueDirection(heldDirection);
+                over -= repeatRate;
+            }
+            holdTimer = initialDelay + over;
+        }
+    }
+
+    private void enqueueDirection(Directions dir) {
+        if (tweenActive || moveRequested) {
+            return;
+        }
+        if (directionQueue.offer(dir)) {
+            moveRequested = true;
+        }
+    }
+
+    private void detectAndAnimateMovement() {
+        Player p = game.getPlayer();
+        int cx = p.getX();
+        int cy = p.getY();
+
+        if (moveRequested && (cx != prevX || cy != prevY)) {
+            float startPX = prevX * GameConfig.TILE_SIZE;
+            float startPY = prevY * GameConfig.TILE_SIZE;
+            float endPX = cx * GameConfig.TILE_SIZE;
+            float endPY = cy * GameConfig.TILE_SIZE;
+
+            boolean pushed = (p.getPushCount() > prevPushes);
+
+            int dx = Integer.compare(cx, prevX);
+            int dy = Integer.compare(cy, prevY);
+
+            if (pushed) {
+                int fx = cx + dx, fy = cy + dy;
+                if (game.getMap().isInBounds(fx, fy)) {
+                    char front = game.getMap().getTile(fx, fy);
+                    if (front == TileMap.BOX_ON_TARGET && boxPlacedSound != null) {
+                        boxPlacedSound.play(1f);
+                    }
+                }
+            }
+
+            stepSound.play(1f);
+
+            startTween(startPX, startPY, endPX, endPY);
+
+            game.recomputeVictory();
+            if (game.isVictory()) {
+                bgMusic.stop();
+                int totalSec = (int) timeChronometer;
+                int moves = p.getMoveCount();
+                int pushes = p.getPushCount();
+                app.setScreen(new VictoryScreen(app, level, moves, pushes, totalSec, 7, 0, font));
+                return;
+            }
+
+            prevX = cx;
+            prevY = cy;
+            prevPushes = p.getPushCount();
+            moveRequested = false;
+        }
     }
 
     protected void loadCommonAssets() {
@@ -187,10 +324,18 @@ public abstract class BasePlayScreen implements Screen {
 
         bgMusic = audio.newMusic(files.internal("audios/levelSong.mp3"));
         bgMusic.setLooping(true);
-        bgMusic.setVolume(0.25f);
+        bgMusic.setVolume(0.3f);
         bgMusic.play();
 
         playerRatio = (float) downFrames[1].getHeight() / downFrames[1].getWidth();
+    }
+
+    protected Texture load(String path) {
+        return new Texture(files.internal(path));
+    }
+
+    protected Sound loadSound(String path) {
+        return audio.newSound(files.internal(path));
     }
 
     protected void disposeCommonAssets() {
@@ -219,7 +364,7 @@ public abstract class BasePlayScreen implements Screen {
 
     protected int getCfgKey(String name, int def) {
         try {
-            var usuario = com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo;
+            Usuario usuario = com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo;
             if (usuario != null && usuario.configuracion != null) {
                 Integer v = usuario.configuracion.get(name);
                 if (v != null && v != 0) {

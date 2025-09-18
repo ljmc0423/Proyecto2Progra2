@@ -6,174 +6,36 @@ import static com.badlogic.gdx.Input.Keys.R;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-
-import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
-
-import GameLogic.Directions;
 import GameLogic.GameConfig;
 import GameLogic.MovementThread;
-import GameLogic.SokobanGame;
 import GameLogic.TileMap;
-import GameLogic.Player;
 
 public final class GameScreen extends BasePlayScreen {
-
-    private final SokobanGame game = new SokobanGame();
-
-    // Hilo y cola
-    private BlockingQueue<Directions> directionQueue;
-    private MovementThread movementThreadLogic;
-    private Thread movementThread;
-
-    // Nivel actual
-    private final int level;
 
     // Texturas
     private Texture boxTexture, boxTexturePlaced, targetTexture;
 
-    // Sonidos
-    private Sound boxPlacedSound;
-
-    // Para detectar movimiento entre frames
-    private int prevX, prevY;
-    private int prevPushes;
-
-    private boolean moveRequested = false;
-
     public GameScreen(Game app, int level) {
-        super(app);
-        this.level = level;
+        super(app, level);
     }
 
     @Override
     protected void onShowExtra() {
-        game.startLevel(level);
-
-        // Enlazar jugador para BasePlayScreen (para dibujarlo)
-        setPlayer(game.getPlayer());
         prevPushes = game.getPlayer().getPushCount();
 
         boxTexture = load("textures/box.png");
         boxTexturePlaced = load("textures/boxPlaced.png");
         targetTexture = load("textures/target.png");
         boxPlacedSound = loadSound("audios/box_placed.wav");
-
-        directionQueue = new ArrayBlockingQueue<>(1);
-        movementThreadLogic = new MovementThread(directionQueue, game.getMap(), game.getPlayer());
-        movementThread = new Thread(movementThreadLogic);
-        movementThread.setDaemon(true);
-        movementThread.start();
-
-        prevX = game.getPlayer().getX();
-        prevY = game.getPlayer().getY();
     }
-
+    
     @Override
     protected void onUpdate(float delta) {
-        if (!tweenActive) {
-            handleHeldInput(delta);
-        }
-
-        detectAndAnimateMovement();
-
-        if (moveRequested && !tweenActive && directionQueue.isEmpty()) {
-            Player p = game.getPlayer();
-            if (p.getX() == prevX && p.getY() == prevY) {
-                moveRequested = false;
-            }
-        }
-
+        super.onUpdate(delta);
         int reiniciarKey = getCfgKey("Reiniciar", R);
         if (input.isKeyJustPressed(reiniciarKey)) {
             resetLevel();
-        }
-    }
-
-    private void handleHeldInput(float delta) {
-        if (tweenActive || moveRequested) {
-            return;
-        }
-        Directions currentHeld = readHeldDirection();
-        if (currentHeld == null) {
-            heldDirection = null;
-            holdTimer = 0f;
-            return;
-        }
-
-        if (heldDirection == null || currentHeld != heldDirection) {
-            heldDirection = currentHeld;
-            holdTimer = 0f;
-            enqueueDirection(heldDirection);
-            facing = heldDirection;
-            return;
-        }
-
-        holdTimer += delta;
-        if (holdTimer >= initialDelay) {
-            float over = holdTimer - initialDelay;
-            while (over >= repeatRate && !moveRequested) {
-                enqueueDirection(heldDirection);
-                over -= repeatRate;
-            }
-            holdTimer = initialDelay + over;
-        }
-    }
-
-    private void enqueueDirection(Directions dir) {
-        if (tweenActive || moveRequested) {
-            return;
-        }
-        if (directionQueue.offer(dir)) {
-            moveRequested = true;
-        }
-    }
-
-    private void detectAndAnimateMovement() {
-        Player p = game.getPlayer();
-        int cx = p.getX();
-        int cy = p.getY();
-
-        if (moveRequested && (cx != prevX || cy != prevY)) {
-            float startPX = prevX * GameConfig.TILE_SIZE;
-            float startPY = prevY * GameConfig.TILE_SIZE;
-            float endPX = cx * GameConfig.TILE_SIZE;
-            float endPY = cy * GameConfig.TILE_SIZE;
-
-            boolean pushed = (p.getPushCount() > prevPushes);
-
-            int dx = Integer.compare(cx, prevX);
-            int dy = Integer.compare(cy, prevY);
-
-            if (pushed) {
-                int fx = cx + dx, fy = cy + dy;
-                if (game.getMap().isInBounds(fx, fy)) {
-                    char front = game.getMap().getTile(fx, fy);
-                    if (front == TileMap.BOX_ON_TARGET && boxPlacedSound != null) {
-                        boxPlacedSound.play(1f);
-                    }
-                }
-            }
-
-            stepSound.play(1f);
-
-            startTween(startPX, startPY, endPX, endPY);
-
-            game.recomputeVictory();
-            if (game.isVictory()) {
-                bgMusic.stop();
-                int totalSec = (int) timeChronometer;
-                int moves = p.getMoveCount();
-                int pushes = p.getPushCount();
-                app.setScreen(new VictoryScreen(app, level, moves, pushes, totalSec, 7, 0, font));
-                return;
-            }
-
-            prevX = cx;
-            prevY = cy;
-            prevPushes = p.getPushCount();
-            moveRequested = false;
         }
     }
 
@@ -262,16 +124,6 @@ public final class GameScreen extends BasePlayScreen {
 
     @Override
     protected void onDisposeExtra() {
-        try {
-            if (movementThreadLogic != null) {
-                movementThreadLogic.stop();
-            }
-            if (movementThread != null) {
-                movementThread.interrupt();
-            }
-        } catch (Exception ignored) {
-        }
-
         boxTexture.dispose();
         boxTexturePlaced.dispose();
         targetTexture.dispose();

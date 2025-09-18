@@ -41,7 +41,7 @@ public final class SokobanGame extends Game {
     private boolean checkVictory() {
         for (int y = 0; y < GameConfig.ROWS; y++) {
             for (int x = 0; x < GameConfig.COLS; x++) {
-                if (map.getTile(x, y) == TileMap.BOX) {
+                if (map.getTile(x, y) == TileMap.BOX || map.getTile(x, y) == TileMap.ELEVATOR) {
                     return false;
                 }
             }
