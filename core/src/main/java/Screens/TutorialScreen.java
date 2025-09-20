@@ -22,8 +22,8 @@ public class TutorialScreen extends BaseScreen {
             new Texture("ui/instruccion_3.png")
         };
 
-        float fadeTime = 1f;
-        float showTime = 2f;
+        float fadeTime = 2f;
+        float showTime = 4f;
 
         float delay = 0;
         for (int i = 0; i < diapositivas.length; i++) {

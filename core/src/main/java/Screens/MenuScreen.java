@@ -46,7 +46,6 @@ public class MenuScreen extends BaseScreen {
         pb.color = Color.valueOf("E6DFC9");
         buttonFont = generator.generateFont(pb);
 
-        // Styles
         Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, titleFont.getColor());
         TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
         btnStyle.font = buttonFont;
@@ -54,12 +53,11 @@ public class MenuScreen extends BaseScreen {
 
         lblTitle = new Label("SOKOBAN", titleStyle);
         btnPlay = new TextButton("Jugar", btnStyle);
-        btnLevels = new TextButton("Niveles", btnStyle);
+        btnLevels = new TextButton("Tutorial", btnStyle);
         btnConfig = new TextButton("Configuraciones", btnStyle);
         btnUniverso = new TextButton("Universo Sokoban", btnStyle);
         btnExit = new TextButton("Cerrar Sesion", btnStyle);
 
-        // Listeners
         btnPlay.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
