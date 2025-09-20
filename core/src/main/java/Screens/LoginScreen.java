@@ -5,9 +5,8 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
@@ -61,15 +60,9 @@ public class LoginScreen extends BaseScreen {
         btnCrear = new TextButton("Crear jugador", skin);
         btnSalir = new TextButton("Salir", skin);
 
-        ClickListener loginListener = new ClickListener() {
-            @Override public void clicked(InputEvent e, float x, float y) { loginDialog(); }
-        };
-        ClickListener createListener = new ClickListener() {
-            @Override public void clicked(InputEvent e, float x, float y) { createPlayerDialog(); }
-        };
-        ClickListener exitListener = new ClickListener() {
-            @Override public void clicked(InputEvent e, float x, float y) { app.exit(); }
-        };
+        ClickListener loginListener = new ClickListener() { @Override public void clicked(InputEvent e, float x, float y) { loginDialog(); } };
+        ClickListener createListener = new ClickListener() { @Override public void clicked(InputEvent e, float x, float y) { createPlayerDialog(); } };
+        ClickListener exitListener = new ClickListener() { @Override public void clicked(InputEvent e, float x, float y) { app.exit(); } };
 
         if (loginImg != null) loginImg.addListener(loginListener);
         if (createPlayerImg != null) createPlayerImg.addListener(createListener);
@@ -165,8 +158,12 @@ public class LoginScreen extends BaseScreen {
                     }
 
                     Long anterior = ManejoUsuarios.UsuarioActivo.getUltimaSesion();
-                    if (anterior == null) anterior = 0L;
-                    ManejoUsuarios.UsuarioActivo.sesionAnterior = anterior;
+                    if (anterior == null || anterior == 0L) {
+                        ManejoUsuarios.UsuarioActivo.sesionAnterior = ahora;
+                        ManejoUsuarios.UsuarioActivo.setUltimaSesion(ahora);
+                    } else {
+                        ManejoUsuarios.UsuarioActivo.sesionAnterior = anterior;
+                    }
                     ManejoUsuarios.UsuarioActivo.sesionActual = ahora;
 
                     ArchivoGuardar.guardarFechas();
