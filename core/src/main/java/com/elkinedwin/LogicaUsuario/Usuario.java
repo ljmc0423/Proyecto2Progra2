@@ -29,7 +29,7 @@ public class Usuario {
     private int puntuacionGeneral = 0;
 
     private ArrayList<Usuario> amigos = new ArrayList<>();
-    private int[] tiempoPromedio = new int[6];
+    private int[] tiempoPromedio = new int[7]; // 7 niveles
 
     public ArrayList<Partida> historial = new ArrayList<>();
     private ArrayList<Integer> partidasPorNivel = new ArrayList<>();
@@ -62,6 +62,54 @@ public class Usuario {
         for (int i = 0; i < tiempoPromedio.length; i++) tiempoPromedio[i] = 0;
     }
 
+   
+
+    
+    public void recalcularTiempoPromedio() {
+        for (int i = 0; i < 7; i++) {
+            int partidas = partidasPorNivel.get(i);
+            int tiempo = tiempoPorNivel.get(i);
+            if (partidas > 0) {
+                tiempoPromedio[i] = tiempo / partidas;
+            } else {
+                tiempoPromedio[i] = 0;
+            }
+        }
+    }
+
+ 
+    public void recalcularTiempoPromedioNivel(int nivel) {
+        int idx = nivel - 1;
+        int partidas = partidasPorNivel.get(idx);
+        int tiempo = tiempoPorNivel.get(idx);
+        if (partidas > 0) {
+            tiempoPromedio[idx] = tiempo / partidas;
+        } else {
+            tiempoPromedio[idx] = 0;
+        }
+    }
+
+    
+    public int getTiempoPromedioNivel(int nivel) {
+        return tiempoPromedio[nivel - 1];
+    }
+
+   
+    public int[] getTiemposPromedio() {
+        return tiempoPromedio;
+    }
+
+    
+    public void acumularPartida(int nivel, int tiempoSegundos) {
+        int idx = nivel - 1;
+        tiempoPorNivel.set(idx, tiempoPorNivel.get(idx) + tiempoSegundos);
+        partidasPorNivel.set(idx, partidasPorNivel.get(idx) + 1);
+        partidasTotales++;
+        recalcularTiempoPromedioNivel(nivel);
+    }
+
+    
+
     public int getPartidasTotales() { return partidasTotales; }
     public void setPartidasTotales(int v) { this.partidasTotales = v; }
 
@@ -92,9 +140,6 @@ public class Usuario {
         this.ultimaSesion = v;
         this.sesionAnterior = v;
     }
-
-    public int getTiempoPromedio(int nivel) { return tiempoPromedio[nivel]; }
-    public void setTiempoPromedio(int nivel, int puntaje) { this.tiempoPromedio[nivel] = (tiempoPromedio[nivel] + puntaje); }
 
     public void setNivelCompletado(int nivel, Boolean estado){
         nivelesCompletados.set(nivel - 1, estado);

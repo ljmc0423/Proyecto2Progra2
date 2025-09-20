@@ -1,5 +1,6 @@
 package com.elkinedwin.LogicaUsuario;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.RandomAccessFile;
 
@@ -80,21 +81,47 @@ public class ArchivoGuardar {
     }
 
     // ===== DATOS.BIN =====
+    // Reglas:
+    // - fechaRegistro: no cambia.
+    // - ultimaSesion:
+    //   * Primer login: si ultimaSesion guardada es 0 y no hay sesionAnterior, usar sesionActual.
+    //   * Logins siguientes: ultimaSesion se actualiza al cerrar sesion (con el inicio de la sesion actual).
+    //   * En cualquier otro caso se conserva lo guardado.
 
     public static void guardarFechas() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoDatos;
 
-        // FechaRegistro
-        long reg = ManejoUsuarios.UsuarioActivo.getFechaRegistro() == null ? 0L : ManejoUsuarios.UsuarioActivo.getFechaRegistro();
+       
+        long reg = ManejoUsuarios.UsuarioActivo.getFechaRegistro() == null ? 0L: ManejoUsuarios.UsuarioActivo.getFechaRegistro();
         f.seek(0);
         f.writeLong(reg);
 
-        // UltimaSesion (guardamos la "anterior")
-        Long anterior = ManejoUsuarios.UsuarioActivo.sesionAnterior;
-        if (anterior == null) anterior = ManejoUsuarios.UsuarioActivo.getUltimaSesion();
-        if (anterior == null) anterior = 0L;
+       
+        Long anterior = ManejoUsuarios.UsuarioActivo.sesionAnterior; 
+        Long actual   = ManejoUsuarios.UsuarioActivo.sesionActual; 
+        long ultimaEnMem = ManejoUsuarios.UsuarioActivo.getUltimaSesion() == null
+                            ? 0L : ManejoUsuarios.UsuarioActivo.getUltimaSesion();
+
+        
         f.seek(8);
-        f.writeLong(anterior);
+        long ultimaEnArchivo = f.readLong();
+
+        long valueUltima;
+        if ((ultimaEnArchivo == 0L || ultimaEnMem == 0L) &&
+            (anterior == null || anterior == 0L) &&
+            (actual != null && actual > 0L)) {
+            
+            valueUltima = actual;
+        } else if (anterior != null && anterior > 0L) {
+            
+            valueUltima = anterior;
+        } else {
+            
+            valueUltima = (ultimaEnMem != 0L) ? ultimaEnMem : ultimaEnArchivo;
+        }
+
+        f.seek(8);
+        f.writeLong(valueUltima);
     }
 
     public static void guardarDatosUTF() throws IOException {
@@ -125,7 +152,6 @@ public class ArchivoGuardar {
         RandomAccessFile f = ManejoArchivos.archivoPartidas;
 
         if (ManejoUsuarios.UsuarioActivo.historial == null || ManejoUsuarios.UsuarioActivo.historial.isEmpty()) {
-            
             f.setLength(0);
             return;
         }
@@ -147,11 +173,58 @@ public class ArchivoGuardar {
             f.writeUTF(logros);
             f.writeInt(tiempo);
         }
-        // si se reescribe menos que antes, opcional: truncar a posición actual
-        // f.setLength(f.getFilePointer());
+        // f.setLength(f.getFilePointer()); // opcional
     }
 
-    // ===== AGRUPADOR =====
+    // ===== RENOMBRAR CARPETA USUARIO =====
+
+    public static void renombrarCarpetaUsuarioSiCambio() throws IOException {
+        if (ManejoUsuarios.UsuarioActivo == null) return;
+
+        String newUser = ManejoUsuarios.UsuarioActivo.getUsuario();
+        if (newUser == null || newUser.trim().isEmpty()) return;
+
+        File currentDir = ManejoArchivos.carpetaUsuarioActual;
+        if (currentDir == null) return;
+
+        if (currentDir.getName().equals(newUser)) return; // nada que hacer
+
+        File parent = ManejoArchivos.carpetaUsuarios;
+        if (parent == null) parent = new File("Usuarios");
+        if (!parent.exists()) parent.mkdirs();
+
+        File targetDir = new File(parent, newUser);
+        if (targetDir.exists()) {
+            throw new IOException("Ya existe una carpeta con el usuario: " + newUser);
+        }
+
+        // cerrar RAFs
+        closeQuietly(ManejoArchivos.archivoDatos);
+        closeQuietly(ManejoArchivos.archivoProgreso);
+        closeQuietly(ManejoArchivos.archivoPartidas);
+        closeQuietly(ManejoArchivos.archivoConfig);
+        ManejoArchivos.archivoDatos = null;
+        ManejoArchivos.archivoProgreso = null;
+        ManejoArchivos.archivoPartidas = null;
+        ManejoArchivos.archivoConfig = null;
+
+        // renombrar
+        boolean ok = currentDir.renameTo(targetDir);
+        if (!ok) {
+            throw new IOException("No se pudo renombrar la carpeta: " +
+                    currentDir.getAbsolutePath() + " -> " + targetDir.getAbsolutePath());
+        }
+
+        // reabrir
+        ManejoArchivos.carpetaUsuarioActual = targetDir;
+        ManejoArchivos.setArchivo(newUser);
+    }
+
+    private static void closeQuietly(RandomAccessFile raf) {
+        if (raf != null) { try { raf.close(); } catch (Exception ignored) {} }
+    }
+
+    // ===== AGRUPADORES =====
 
     public static void guardarTodo() throws IOException {
         if (ManejoArchivos.archivoDatos == null ||
@@ -171,7 +244,7 @@ public class ArchivoGuardar {
 
         guardarConfiguracion();
 
-        guardarFechas();
+        guardarFechas();      
         guardarDatosUTF();
 
         guardarPartidas();
@@ -185,11 +258,16 @@ public class ArchivoGuardar {
             throw new IOException("Archivos no listos.");
         }
 
-        // Actualizamos la "anterior" a ahora (sesionActual no se guarda en archivo)
         if (ManejoUsuarios.UsuarioActivo != null) {
-            Long ahora = System.currentTimeMillis();
-            ManejoUsuarios.UsuarioActivo.sesionAnterior = ahora;
+          
+            if (ManejoUsuarios.UsuarioActivo.sesionActual != null &&
+                ManejoUsuarios.UsuarioActivo.sesionActual > 0L) {
+                ManejoUsuarios.UsuarioActivo.sesionAnterior = ManejoUsuarios.UsuarioActivo.sesionActual;
+            }
         }
+
+        
+        renombrarCarpetaUsuarioSiCambio();
 
         guardarTodo();
     }

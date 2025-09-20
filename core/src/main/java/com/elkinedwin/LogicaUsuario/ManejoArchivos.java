@@ -31,12 +31,10 @@ public class ManejoArchivos {
         return dir.isDirectory() ? dir.getPath() : null;
     }
 
-    
     public static String buscarArchivoUsuario(String usuario) {
         return buscarUsuario(usuario);
     }
 
-  
     public static void setArchivo(String usuario) throws IOException {
         iniciarCpadre();
         if (usuario == null || usuario.trim().isEmpty())
@@ -46,14 +44,13 @@ public class ManejoArchivos {
         if (!carpetaUsuarioActual.isDirectory()){
             throw new FileNotFoundException("No existe el usuario: " + usuario);
         }
-        
+
         archivoDatos    = new RandomAccessFile(new File(carpetaUsuarioActual, "Datos.bin"), "rw");
         archivoProgreso = new RandomAccessFile(new File(carpetaUsuarioActual, "Progreso.bin"), "rw");
         archivoPartidas = new RandomAccessFile(new File(carpetaUsuarioActual, "Partidas.bin"), "rw");
         archivoConfig   = new RandomAccessFile(new File(carpetaUsuarioActual, "Config.bin"), "rw");
     }
 
-    
     public static void crearUsuario(String nombre, String usuario, String contrasena) throws IOException {
         iniciarCpadre();
         if (usuario == null || usuario.trim().isEmpty())
@@ -72,13 +69,13 @@ public class ManejoArchivos {
         archivoDatos = new RandomAccessFile(new File(dir, "Datos.bin"), "rw");
         // [0] FechaRegistro, [8] UltimaSesion
         archivoDatos.seek(0);
-        archivoDatos.writeLong(ahora);
-        archivoDatos.writeLong(ahora);
+        archivoDatos.writeLong(ahora);  // fechaRegistro
+        archivoDatos.writeLong(0L);     // ultimaSesion (primer login la definirá)
         // [16] Nombre (UTF)
         archivoDatos.seek(16);
         archivoDatos.writeUTF(nombre == null ? "" : nombre);
         //  UTF: "usuario,contrasena,imagen,"
-        String imgDefecto = "../Imagenes/Ulogo.png";
+        String imgDefecto = "../Imagenes/LogoU.png";
         StringBuilder datos = new StringBuilder();
         datos.append(usuario == null ? "" : usuario).append(',')
              .append(contrasena == null ? "" : contrasena).append(',')
@@ -110,33 +107,26 @@ public class ManejoArchivos {
 
         // ===== Config.bin =====
         archivoConfig = new RandomAccessFile(new File(dir, "Config.bin"), "rw");
-        
-        archivoConfig.seek(0);  
-        archivoConfig.writeInt(80);
-        archivoConfig.seek(4);  
-        archivoConfig.writeInt(19); 
-        archivoConfig.seek(8);  
-        archivoConfig.writeInt(20); 
-        archivoConfig.seek(12); 
-        archivoConfig.writeInt(22); 
-        archivoConfig.seek(16); 
-        archivoConfig.writeInt(21); 
-        archivoConfig.seek(20); 
-        archivoConfig.writeInt(46); 
-        archivoConfig.seek(24); 
-        archivoConfig.writeInt(1);
+        archivoConfig.seek(0);  archivoConfig.writeInt(80); // Volumen
+        archivoConfig.seek(4);  archivoConfig.writeInt(19); // MoverArriba
+        archivoConfig.seek(8);  archivoConfig.writeInt(20); // MoverAbajo
+        archivoConfig.seek(12); archivoConfig.writeInt(22); // MoverDer
+        archivoConfig.seek(16); archivoConfig.writeInt(21); // MoverIzq
+        archivoConfig.seek(20); archivoConfig.writeInt(46); // Reiniciar
+        archivoConfig.seek(24); archivoConfig.writeInt(1);  // Idioma
         archivoConfig.getFD().sync();
 
         // ===== Partidas.bin =====
-       
         archivoPartidas = new RandomAccessFile(new File(dir, "Partidas.bin"), "rw");
-        
         archivoPartidas.setLength(0);
         archivoPartidas.getFD().sync();
 
-        
+        // Referencia en memoria
         ManejoUsuarios.UsuarioActivo = new Usuario(usuario, nombre, contrasena, ahora);
-        
+       
+        ManejoUsuarios.UsuarioActivo.setUltimaSesion(0L);
+        ManejoUsuarios.UsuarioActivo.sesionAnterior = 0L;
+        ManejoUsuarios.UsuarioActivo.sesionActual = 0L;
 
         carpetaUsuarioActual = dir;
     }
