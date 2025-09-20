@@ -17,10 +17,6 @@ public final class GameScreen extends BasePlayScreen {
     // Texturas
     private Texture boxTexture, boxTexturePlaced, targetTexture;
 
-    //para el hud del tutorial
-    private int kUp, kDown, kLeft, kRight, kReset;
-    private String sUp, sDown, sLeft, sRight, sReset;
-
     public GameScreen(Game app, int level) {
         super(app, level);
     }
@@ -34,23 +30,16 @@ public final class GameScreen extends BasePlayScreen {
         targetTexture = load("textures/target.png");
         boxPlacedSound = loadSound("audios/box_placed.wav");
 
-        kUp = getCfgKey("Arriba", Keys.UP);
-        kDown = getCfgKey("Abajo", Keys.DOWN);
-        kLeft = getCfgKey("Izquierda", Keys.LEFT);
-        kRight = getCfgKey("Derecha", Keys.RIGHT);
-        kReset = getCfgKey("Reiniciar", Keys.R);
-
-        sUp = Keys.toString(kUp);
-        sDown = Keys.toString(kDown);
-        sLeft = Keys.toString(kLeft);
-        sRight = Keys.toString(kRight);
-        sReset = Keys.toString(kReset);
-
     }
 
     @Override
     protected void onUpdate(float delta) {
         super.onUpdate(delta);
+        
+        if (paused) {
+            return;
+        }
+
         int reiniciarKey = getCfgKey("Reiniciar", R);
         if (input.isKeyJustPressed(reiniciarKey)) {
             resetLevel();

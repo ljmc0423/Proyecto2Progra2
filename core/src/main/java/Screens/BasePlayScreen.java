@@ -22,7 +22,19 @@ import GameLogic.MovementThread;
 import GameLogic.Player;
 import GameLogic.SokobanGame;
 import GameLogic.TileMap;
+import com.badlogic.gdx.Input;
+import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.Drawable;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.elkinedwin.LogicaUsuario.Usuario;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
@@ -82,6 +94,17 @@ public abstract class BasePlayScreen implements Screen {
     protected Directions heldDirection = null;
     protected float holdTimer = 0f;
 
+    //para el hud del tutorial
+    protected int kUp, kDown, kLeft, kRight, kReset, kPause;
+    protected String sUp, sDown, sLeft, sRight, sReset, sPause;
+
+    //para pausa
+    protected boolean paused = false;
+    private Stage pauseStage;
+    private Table pauseRoot, pausePanel;
+
+    private Texture dimTexture, btnTexture;
+
     // Cronómetro
     protected float timeChronometer = 0f;
 
@@ -120,13 +143,65 @@ public abstract class BasePlayScreen implements Screen {
         prevY = game.getPlayer().getY();
 
         loadCommonAssets();
+
+        pauseStage = new Stage(viewport);
+        Label.LabelStyle pauseStyle = new Label.LabelStyle(font, Color.WHITE);
+
+        Pixmap pm = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pm.setColor(0, 0, 0, 0.6f);
+        pm.fill();
+        dimTexture = new Texture(pm);
+        pm.dispose();
+        Drawable dimBg = new TextureRegionDrawable(new TextureRegion(dimTexture));
+
+        Pixmap pb = new Pixmap(1, 1, Pixmap.Format.RGBA8888);
+        pb.setColor(Color.WHITE);
+        pb.fill();
+        btnTexture = new Texture(pb);
+        pb.dispose();
+        Drawable up = new TextureRegionDrawable(new TextureRegion(btnTexture)).tint(new Color(1f, 1f, 1f, 0.92f));
+        Drawable down = new TextureRegionDrawable(new TextureRegion(btnTexture)).tint(new Color(0.90f, 0.90f, 0.90f, 1f));
+
+        TextButtonStyle bs = new TextButtonStyle();
+        bs.font = font;
+        bs.fontColor = Color.BLACK;
+        bs.up = up;
+        bs.down = down;
+
+        pauseRoot = new Table();
+        pauseRoot.setFillParent(true);
+        pauseRoot.setBackground(dimBg);
+
+        pausePanel = new Table();
+        pausePanel.pad(24f);
+        pausePanel.defaults().pad(8f);
+        pausePanel.add(new Label("JUEGO PAUSADO", pauseStyle)).row();
+        pausePanel.add(new Label(sPause + ": Reanudar", pauseStyle)).row();
+
+        TextButton.TextButtonStyle buttonStyle = new TextButton.TextButtonStyle();
+        buttonStyle.font = font;
+        buttonStyle.fontColor = Color.WHITE;
+        buttonStyle.downFontColor = Color.GRAY;
+
+        TextButton exitButton = new TextButton("Salir del Juego", buttonStyle);
+        exitButton.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                app.setScreen(new MenuScreen(app));
+            }
+        });
+
+        pausePanel.add(exitButton).padTop(20f).row();
+
+        pauseRoot.add(pausePanel).center();
+        pauseStage.addActor(pauseRoot);
+        pauseRoot.setVisible(false);
+
         onShowExtra();
     }
 
     @Override
     public void render(float delta) {
-        timeChronometer += delta;
-
         onUpdate(delta);
 
         advanceTween(delta);
@@ -140,11 +215,17 @@ public abstract class BasePlayScreen implements Screen {
         drawPlayer();
         onDrawHUD();
         batch.end();
+        if (paused) {
+            pauseStage.act(delta);
+            pauseStage.draw();
+        }
+
     }
 
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height, true);
+        pauseStage.getViewport().update(width, height, true);
     }
 
     @Override
@@ -171,6 +252,8 @@ public abstract class BasePlayScreen implements Screen {
         } catch (Exception ignored) {
         }
 
+        pauseStage.dispose();
+
         onDisposeExtra();
         batch.dispose();
         disposeCommonAssets();
@@ -185,6 +268,28 @@ public abstract class BasePlayScreen implements Screen {
     protected abstract void onDisposeExtra();
 
     protected void onUpdate(float delta) {
+
+        if (input.isKeyJustPressed(kPause)) {
+            paused = !paused;
+
+            if (paused) {
+                directionQueue.clear();
+                pauseRoot.setVisible(true);
+                bgMusic.pause();
+                input.setInputProcessor(pauseStage);
+            } else {
+                pauseRoot.setVisible(false);
+                bgMusic.play();
+                input.setInputProcessor(null);
+            }
+        }
+
+        if (paused) {
+            return;
+        }
+
+        timeChronometer += delta;
+
         if (!tweenActive) {
             handleHeldInput(delta);
         }
@@ -192,8 +297,8 @@ public abstract class BasePlayScreen implements Screen {
         detectAndAnimateMovement();
 
         if (moveRequested && !tweenActive && directionQueue.isEmpty()) {
-            Player p = game.getPlayer();
-            if (p.getX() == prevX && p.getY() == prevY) {
+            Player player = game.getPlayer();
+            if (player.getX() == prevX && player.getY() == prevY) {
                 moveRequested = false;
             }
         }
@@ -313,6 +418,20 @@ public abstract class BasePlayScreen implements Screen {
         Texture rightIdle = load("textures/player_right_idle.png");
         Texture rightWalk2 = load("textures/player_right_walk2.png");
 
+        kUp = getCfgKey("Arriba", Input.Keys.UP);
+        kDown = getCfgKey("Abajo", Input.Keys.DOWN);
+        kLeft = getCfgKey("Izquierda", Input.Keys.LEFT);
+        kRight = getCfgKey("Derecha", Input.Keys.RIGHT);
+        kReset = getCfgKey("Reiniciar", Input.Keys.R);
+        kPause = getCfgKey("Pausar", Input.Keys.ESCAPE);
+
+        sUp = Input.Keys.toString(kUp);
+        sDown = Input.Keys.toString(kDown);
+        sLeft = Input.Keys.toString(kLeft);
+        sRight = Input.Keys.toString(kRight);
+        sReset = Input.Keys.toString(kReset);
+        sPause = Input.Keys.toString(kPause);
+
         downFrames = new Texture[]{downWalk1, downIdle, downWalk2};
         upFrames = new Texture[]{upWalk1, upIdle, upWalk2};
         leftFrames = new Texture[]{leftWalk1, leftIdle, leftWalk2};
@@ -341,6 +460,7 @@ public abstract class BasePlayScreen implements Screen {
     protected void disposeCommonAssets() {
         floorTexture.dispose();
         wallTexture.dispose();
+        btnTexture.dispose();
 
         for (Texture t : downFrames) {
             t.dispose();
@@ -377,10 +497,10 @@ public abstract class BasePlayScreen implements Screen {
     }
 
     protected Directions readHeldDirection() {
-        int kUp = getCfgKey("MoverArriba", UP);
-        int kDown = getCfgKey("MoverAbajo", DOWN);
-        int kLeft = getCfgKey("MoverIzq", LEFT);
-        int kRight = getCfgKey("MoverDer", RIGHT);
+        kUp = getCfgKey("MoverArriba", UP);
+        kDown = getCfgKey("MoverAbajo", DOWN);
+        kLeft = getCfgKey("MoverIzq", LEFT);
+        kRight = getCfgKey("MoverDer", RIGHT);
 
         if (input.isKeyPressed(kUp)) {
             return Directions.UP;
@@ -457,4 +577,5 @@ public abstract class BasePlayScreen implements Screen {
         }
         return arr[idx];
     }
+
 }
