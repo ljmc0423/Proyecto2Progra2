@@ -10,11 +10,16 @@ import com.badlogic.gdx.graphics.Texture;
 import GameLogic.GameConfig;
 import GameLogic.MovementThread;
 import GameLogic.TileMap;
+import com.badlogic.gdx.Input.Keys;
 
 public final class GameScreen extends BasePlayScreen {
 
     // Texturas
     private Texture boxTexture, boxTexturePlaced, targetTexture;
+
+    //para el hud del tutorial
+    private int kUp, kDown, kLeft, kRight, kReset;
+    private String sUp, sDown, sLeft, sRight, sReset;
 
     public GameScreen(Game app, int level) {
         super(app, level);
@@ -28,8 +33,21 @@ public final class GameScreen extends BasePlayScreen {
         boxTexturePlaced = load("textures/boxPlaced.png");
         targetTexture = load("textures/target.png");
         boxPlacedSound = loadSound("audios/box_placed.wav");
+
+        kUp = getCfgKey("Arriba", Keys.UP);
+        kDown = getCfgKey("Abajo", Keys.DOWN);
+        kLeft = getCfgKey("Izquierda", Keys.LEFT);
+        kRight = getCfgKey("Derecha", Keys.RIGHT);
+        kReset = getCfgKey("Reiniciar", Keys.R);
+
+        sUp = Keys.toString(kUp);
+        sDown = Keys.toString(kDown);
+        sLeft = Keys.toString(kLeft);
+        sRight = Keys.toString(kRight);
+        sReset = Keys.toString(kReset);
+
     }
-    
+
     @Override
     protected void onUpdate(float delta) {
         super.onUpdate(delta);
@@ -120,6 +138,13 @@ public final class GameScreen extends BasePlayScreen {
                 + "  Empujes: " + pushes
                 + "  Tiempo: " + timeStr,
                 6, GameConfig.PX_HEIGHT - 6);
+
+        if (level == 0) {
+            float x = 6f, y = 36f;
+            font.draw(batch, "Controles:", x, y + 24);
+            font.draw(batch, "Arriba: " + sUp + "   Abajo: " + sDown, x, y + 12);
+            font.draw(batch, "Izquierda: " + sLeft + "   Derecha: " + sRight + "   Reiniciar: " + sReset, x, y);
+        }
     }
 
     @Override

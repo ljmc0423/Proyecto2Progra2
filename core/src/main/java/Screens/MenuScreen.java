@@ -1,25 +1,29 @@
 package Screens;
 
-import com.badlogic.gdx.Game;
 import static com.badlogic.gdx.Gdx.audio;
 import static com.badlogic.gdx.Gdx.files;
+
+import com.badlogic.gdx.Game;
 import com.badlogic.gdx.audio.Music;
-import com.badlogic.gdx.graphics.Texture;
-import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.scenes.scene2d.ui.*;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-
-// Guardado / usuarios
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.elkinedwin.LogicaUsuario.ArchivoGuardar;
 import com.elkinedwin.LogicaUsuario.ManejoUsuarios;
+import java.io.IOException;
 
 public class MenuScreen extends BaseScreen {
 
     private final Game game;
 
-    private Texture titleTex, playTex, levelTex, configTex, sokobanUniverseTex, exitTex;
-    private Image titleImg, playImg, levelImg, configImg, sokobanUniverseImg, exitImg;
+    private Label lblTitle;
+    private TextButton btnPlay, btnLevels, btnConfig, btnUniverso, btnExit;
+
+    private BitmapFont titleFont, buttonFont;
+    private FreeTypeFontGenerator generator;
 
     private Music bgMusic;
 
@@ -29,61 +33,63 @@ public class MenuScreen extends BaseScreen {
 
     @Override
     protected void onShow() {
-        titleTex = new Texture("ui/title.png");
-        playTex = new Texture("ui/play.png");
-        levelTex = new Texture("ui/levels.png");
-        configTex = new Texture("ui/config.png");
-        sokobanUniverseTex = new Texture("ui/sokobanuniverse.png");
-        exitTex = new Texture("ui/logout.png");
+        // Fuentes
+        generator = new FreeTypeFontGenerator(files.internal("fonts/pokemon_fire_red.ttf"));
 
-        titleImg = new Image(titleTex);
-        playImg = new Image(playTex);
-        levelImg = new Image(levelTex);
-        configImg = new Image(configTex);
-        sokobanUniverseImg = new Image(sokobanUniverseTex);
-        exitImg = new Image(exitTex);
+        FreeTypeFontGenerator.FreeTypeFontParameter pt = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        pt.size = 136;
+        pt.color = Color.valueOf("E6DFC9");
+        titleFont = generator.generateFont(pt);
 
-        bgMusic = audio.newMusic(files.internal("audios/menu_bg_song.mp3"));
-        bgMusic.setLooping(true);
-        bgMusic.setVolume(0.5f);
-        bgMusic.play();
+        FreeTypeFontGenerator.FreeTypeFontParameter pb = new FreeTypeFontGenerator.FreeTypeFontParameter();
+        pb.size = 72;
+        pb.color = Color.valueOf("E6DFC9");
+        buttonFont = generator.generateFont(pb);
 
-        playImg.addListener(new ClickListener() {
+        // Styles
+        Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, titleFont.getColor());
+        TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
+        btnStyle.font = buttonFont;
+        btnStyle.fontColor = buttonFont.getColor();
+
+        lblTitle = new Label("SOKOBAN", titleStyle);
+        btnPlay = new TextButton("Jugar", btnStyle);
+        btnLevels = new TextButton("Niveles", btnStyle);
+        btnConfig = new TextButton("Configuraciones", btnStyle);
+        btnUniverso = new TextButton("Universo Sokoban", btnStyle);
+        btnExit = new TextButton("Cerrar Sesion", btnStyle);
+
+        // Listeners
+        btnPlay.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
-                game.setScreen(new GameScreen(game, 2));
+                game.setScreen(new GameScreen(game, 3));
             }
         });
-
-        levelImg.addListener(new ClickListener() {
+        btnLevels.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
-                game.setScreen(new StageScreen(game));
+                game.setScreen(new TutorialScreen(game));
             }
         });
-
-        configImg.addListener(new ClickListener() {
+        btnConfig.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
                 game.setScreen(new ConfigScreen(game));
             }
         });
-
-        sokobanUniverseImg.addListener(new ClickListener() {
+        btnUniverso.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
-                // futuro: otra pantalla
             }
         });
-
-        exitImg.addListener(new ClickListener() {
+        btnExit.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
                 try {
-                    // Guarda en datos.bin, progreso.bin, config.bin y partidas.bin
                     ArchivoGuardar.guardarTodoCerrarSesion();
-                } catch (Exception ex) {
-                    // opcional: logging
+                } catch (IOException ioe) {
+                    System.out.println("Error al guardar y cerrar sesión: " + ioe.getMessage());
                 } finally {
                     ManejoUsuarios.UsuarioActivo = null;
                     game.setScreen(new LoginScreen(game));
@@ -95,41 +101,37 @@ public class MenuScreen extends BaseScreen {
         root.setFillParent(true);
         stage.addActor(root);
 
-        root.top().padTop(50f);
-        root.add(titleImg).center().padBottom(60f).row();
+        root.top().padTop(40f);
+        root.add(lblTitle).center().padBottom(60f).row();
 
-        root.defaults().padTop(12f).padBottom(12f);
-        root.add(playImg).center().row();
-        root.add(levelImg).center().row();
-        root.add(configImg).center().row();
-        root.add(sokobanUniverseImg).center().row();
-        root.add(exitImg).center().padTop(24f).row();
-    }
+        root.defaults().padTop(18f).padBottom(18f).center();
+        root.add(btnPlay).row();
+        root.add(btnLevels).row();
+        root.add(btnConfig).row();
+        root.add(btnUniverso).row();
+        root.add(btnExit).padTop(36f).row();
 
-    @Override
-    public void dispose() {
-        hide();
-        super.dispose();
+        bgMusic = audio.newMusic(files.internal("audios/menu_bg_song.mp3"));
+        bgMusic.setLooping(true);
+        bgMusic.setVolume(0.5f);
+        bgMusic.play();
     }
 
     @Override
     public void hide() {
-        bgMusic.stop();
-        bgMusic.dispose();
-        bgMusic = null;
-        titleTex.dispose();
-        titleTex = null;
-        playTex.dispose();
-        playTex = null;
-        levelTex.dispose();
-        levelTex = null;
-        configTex.dispose();
-        configTex = null;
-        sokobanUniverseTex.dispose();
-        sokobanUniverseTex = null;
-        exitTex.dispose();
-        exitTex = null;
-        
+        if (bgMusic != null) {
+            bgMusic.stop();
+            bgMusic.dispose();
+            bgMusic = null;
+        }
         super.hide();
+    }
+
+    @Override
+    public void dispose() {
+        super.dispose();
+        generator.dispose();
+        titleFont.dispose();
+        buttonFont.dispose();
     }
 }
