@@ -64,7 +64,7 @@ public class MenuScreen extends BaseScreen {
         btnUniverso = new TextButton("Universo Sokoban", btnStyle);
         btnExit = new TextButton("Cerrar Sesion", btnStyle);
 
-        btnPlay.addListener(new ClickListener(){ @Override public void clicked(InputEvent e,float x,float y){ game.setScreen(new GameScreen(game, 3)); }});
+        btnPlay.addListener(new ClickListener(){ @Override public void clicked(InputEvent e,float x,float y){ game.setScreen(new GameScreen(game, 1)); }});
         btnLevels.addListener(new ClickListener(){ @Override public void clicked(InputEvent e,float x,float y){ game.setScreen(new TutorialScreen(game)); }});
         btnConfig.addListener(new ClickListener(){ @Override public void clicked(InputEvent e,float x,float y){ game.setScreen(new ConfigScreen(game)); }});
         btnUniverso.addListener(new ClickListener(){ @Override public void clicked(InputEvent e,float x,float y){ }});
