@@ -3,15 +3,23 @@ package Screens;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.scenes.scene2d.ui.Image;
-import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+
+import static com.badlogic.gdx.scenes.scene2d.actions.Actions.*;
 
 public class TutorialScreen extends BaseScreen {
 
     private final Game game;
     private Texture diapositivas[];
 
+    private final com.badlogic.gdx.Screen nextScreenAfter;
+
     public TutorialScreen(Game game) {
+        this(game, new GameScreen(game, 0));
+    }
+
+    public TutorialScreen(Game game, com.badlogic.gdx.Screen nextScreenAfter) {
         this.game = game;
+        this.nextScreenAfter = (nextScreenAfter != null) ? nextScreenAfter : new GameScreen(game, 0);
     }
 
     @Override
@@ -24,8 +32,8 @@ public class TutorialScreen extends BaseScreen {
 
         float fadeTime = 2f;
         float showTime = 4f;
-
         float delay = 0;
+
         for (int i = 0; i < diapositivas.length; i++) {
             int index = i;
             Image img = new Image(diapositivas[i]);
@@ -34,20 +42,17 @@ public class TutorialScreen extends BaseScreen {
             stage.addActor(img);
 
             img.addAction(
-                    Actions.sequence(
-                            Actions.delay(delay),
-                            Actions.fadeIn(fadeTime),
-                            Actions.delay(showTime),
-                            Actions.fadeOut(fadeTime),
-                            Actions.run(new Runnable() {
-                                @Override
-                                public void run() {
-                                    if (index == diapositivas.length - 1) {
-                                        game.setScreen(new GameScreen(game, 0));
-                                    }
-                                }
-                            })
-                    )
+                sequence(
+                    delay(delay),
+                    fadeIn(fadeTime),
+                    delay(showTime),
+                    fadeOut(fadeTime),
+                    run(() -> {
+                        if (index == diapositivas.length - 1) {
+                            game.setScreen(nextScreenAfter);
+                        }
+                    })
+                )
             );
 
             delay += fadeTime + showTime + fadeTime;
@@ -58,9 +63,7 @@ public class TutorialScreen extends BaseScreen {
     public void dispose() {
         super.dispose();
         if (diapositivas != null) {
-            for (Texture t : diapositivas) {
-                t.dispose();
-            }
+            for (Texture t : diapositivas) t.dispose();
         }
     }
 }

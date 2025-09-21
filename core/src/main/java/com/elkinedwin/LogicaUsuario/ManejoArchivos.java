@@ -70,7 +70,7 @@ public class ManejoArchivos {
         // [0] FechaRegistro, [8] UltimaSesion
         archivoDatos.seek(0);
         archivoDatos.writeLong(ahora);  // fechaRegistro
-        archivoDatos.writeLong(0L);     // ultimaSesion (primer login la definirá)
+        archivoDatos.writeLong(0L);     // ultimaSesion 
         // [16] Nombre (UTF)
         archivoDatos.seek(16);
         archivoDatos.writeUTF(nombre == null ? "" : nombre);
@@ -85,23 +85,25 @@ public class ManejoArchivos {
 
         // ===== Progreso.bin =====
         archivoProgreso = new RandomAccessFile(new File(dir, "Progreso.bin"), "rw");
-        // [0..6] boolean[7] niveles completados
-        archivoProgreso.seek(0);
+        // [0] boolean tutorialCompletado
+        archivoProgreso.seek(0); archivoProgreso.writeBoolean(false);
+        // [1..7] boolean[7] niveles completados
+        archivoProgreso.seek(1);
         for (int i = 0; i < 7; i++) archivoProgreso.writeBoolean(false);
-        // [7] int[7] mayor puntuación
-        archivoProgreso.seek(7);
+        // [8] int[7] mayor puntuación
+        archivoProgreso.seek(8);
         for (int i = 0; i < 7; i++) archivoProgreso.writeInt(0);
-        // [35] int tiempo total
-        archivoProgreso.seek(35); archivoProgreso.writeInt(0);
-        // [39] int puntuación general
-        archivoProgreso.seek(39); archivoProgreso.writeInt(0);
-        // [43] int partidas totales
-        archivoProgreso.seek(43); archivoProgreso.writeInt(0);
-        // [47] int[7] partidas por nivel
-        archivoProgreso.seek(47);
+        // [36] int tiempo total
+        archivoProgreso.seek(36); archivoProgreso.writeInt(0);
+        // [40] int puntuación general
+        archivoProgreso.seek(40); archivoProgreso.writeInt(0);
+        // [44] int partidas totales
+        archivoProgreso.seek(44); archivoProgreso.writeInt(0);
+        // [48] int[7] partidas por nivel
+        archivoProgreso.seek(48);
         for (int i = 0; i < 7; i++) archivoProgreso.writeInt(0);
-        // [101] int[7] tiempo por nivel
-        archivoProgreso.seek(101);
+        // [102] int[7] tiempo por nivel
+        archivoProgreso.seek(102);
         for (int i = 0; i < 7; i++) archivoProgreso.writeInt(0);
         archivoProgreso.getFD().sync();
 
@@ -123,7 +125,6 @@ public class ManejoArchivos {
 
         // Referencia en memoria
         ManejoUsuarios.UsuarioActivo = new Usuario(usuario, nombre, contrasena, ahora);
-       
         ManejoUsuarios.UsuarioActivo.setUltimaSesion(0L);
         ManejoUsuarios.UsuarioActivo.sesionAnterior = 0L;
         ManejoUsuarios.UsuarioActivo.sesionActual = 0L;

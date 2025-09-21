@@ -5,8 +5,6 @@ import java.io.RandomAccessFile;
 
 public class LeerArchivo {
 
-   
-    
     public static void cargarUsuario() throws IOException{
         if (ManejoUsuarios.UsuarioActivo == null) throw new IOException("UsuarioActivo null.");
 
@@ -23,16 +21,18 @@ public class LeerArchivo {
         leerPartidas();
         leerAvatar();
 
-        leerCompletados();
-        leerMayorPuntuacion();
-        leerTiempoTotal();
-        leerPuntuacionGeneral();
-        leerPartidasTotales();
-        leerPartidasPorNivel();
+        // PROGRESO.BIN (nuevo layout fijo)
+        leerTutorialCompletado();   // [0]
+        leerCompletados();          // [1..7]
+        leerMayorPuntuacion();      // [8]
+        leerTiempoTotal();          // [36]
+        leerPuntuacionGeneral();    // [40]
+        leerPartidasTotales();      // [44]
+        leerPartidasPorNivel();     // [48]
+        leerTiempoPorNivel();       // [102]
 
+        // CONFIG / DATOS
         leerConfiguracion();
-        leerTiempoPorNivel();
-
         leerFechaRegistro();
         leerUltimaSesion();
     }
@@ -115,7 +115,7 @@ public class LeerArchivo {
         ManejoUsuarios.UsuarioActivo.sesionAnterior = t;
     }
 
-    //PARTIDAS.BIN 
+    // PARTIDAS.BIN 
     public static void leerPartidas() throws IOException {
         RandomAccessFile f = ManejoArchivos.archivoPartidas;
         long len = f.length();
@@ -135,10 +135,18 @@ public class LeerArchivo {
         }
     }
 
-    // PROGRESO.BIN 
-    public static void leerCompletados() throws IOException{
+    // ===== PROGRESO.BIN =====
+
+    public static void leerTutorialCompletado() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoProgreso;
         f.seek(0);
+        boolean v = f.readBoolean();
+        ManejoUsuarios.UsuarioActivo.setTutocomplete(v);
+    }
+
+    public static void leerCompletados() throws IOException{
+        RandomAccessFile f = ManejoArchivos.archivoProgreso;
+        f.seek(1);
         for (int i = 1; i < 8; i++) {
             ManejoUsuarios.UsuarioActivo.setNivelCompletado(i, f.readBoolean());
         }
@@ -146,7 +154,7 @@ public class LeerArchivo {
 
     public static void leerMayorPuntuacion() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoProgreso;
-        f.seek(7);
+        f.seek(8);
         for (int i = 1; i < 8; i++) {
             ManejoUsuarios.UsuarioActivo.setMayorPuntuacion(i, f.readInt());
         }
@@ -154,25 +162,25 @@ public class LeerArchivo {
 
     public static void leerTiempoTotal() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoProgreso;
-        f.seek(35);
+        f.seek(36);
         ManejoUsuarios.UsuarioActivo.setTiempoJugadoTotal(f.readInt());
     }
 
     public static void leerPuntuacionGeneral() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoProgreso;
-        f.seek(39);
+        f.seek(40);
         ManejoUsuarios.UsuarioActivo.setPuntuacionGeneral(f.readInt());
     }
 
     public static void leerPartidasTotales() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoProgreso;
-        f.seek(43);
+        f.seek(44);
         ManejoUsuarios.UsuarioActivo.setPartidasTotales(f.readInt());
     }
 
     public static void leerPartidasPorNivel() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoProgreso;
-        f.seek(47);
+        f.seek(48);
         for (int i = 1; i < 8; i++) {
             ManejoUsuarios.UsuarioActivo.setPartidasPorNivel(i, f.readInt());
         }
@@ -180,7 +188,7 @@ public class LeerArchivo {
 
     public static void leerTiempoPorNivel() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoProgreso;
-        f.seek(101);
+        f.seek(102);
         for (int i = 1; i < 8; i++) {
             ManejoUsuarios.UsuarioActivo.setTiempoPorNivel(i, f.readInt());
         }

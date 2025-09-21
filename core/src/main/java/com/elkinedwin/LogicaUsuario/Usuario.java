@@ -20,6 +20,7 @@ public class Usuario {
     private ArrayList<Integer> mayorPuntuacion = new ArrayList<>();
     private ArrayList<Boolean> nivelesCompletados = new ArrayList<>();
     private int tiempoJugadoTotal = 0;
+    private Boolean Tutocomplete;
 
     private ArrayList<Integer> tiempoPorNivel = new ArrayList<>();
 
@@ -75,6 +76,14 @@ public class Usuario {
                 tiempoPromedio[i] = 0;
             }
         }
+    }
+
+    public Boolean getTutocomplete() {
+        return Tutocomplete;
+    }
+
+    public void setTutocomplete(Boolean tutocomplete) {
+        this.Tutocomplete = tutocomplete;
     }
 
  

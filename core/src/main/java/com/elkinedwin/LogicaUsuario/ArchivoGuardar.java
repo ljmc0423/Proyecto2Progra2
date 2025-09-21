@@ -8,9 +8,15 @@ public class ArchivoGuardar {
 
     // ===== PROGRESO.BIN =====
 
-    public static void guardarNivelesCompletados() throws IOException{
+    public static void guardarTutorialCompletado() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoProgreso;
         f.seek(0);
+        f.writeBoolean(ManejoUsuarios.UsuarioActivo.getTutocomplete());
+    }
+
+    public static void guardarNivelesCompletados() throws IOException{
+        RandomAccessFile f = ManejoArchivos.archivoProgreso;
+        f.seek(1);
         for (int i = 1; i < 8; i++) {
             f.writeBoolean(ManejoUsuarios.UsuarioActivo.getNivelCompletado(i));
         }
@@ -18,7 +24,7 @@ public class ArchivoGuardar {
 
     public static void guardarMayorPuntuacion() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoProgreso;
-        f.seek(7);
+        f.seek(8);
         for (int i = 1; i < 8; i++) {
             f.writeInt(ManejoUsuarios.UsuarioActivo.getMayorPuntuacion(i));
         }
@@ -26,25 +32,25 @@ public class ArchivoGuardar {
 
     public static void guardarTiempoTotal() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoProgreso;
-        f.seek(35);
+        f.seek(36);
         f.writeInt(ManejoUsuarios.UsuarioActivo.getTiempoJugadoTotal());
     }
 
     public static void guardarPuntuacionGeneral() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoProgreso;
-        f.seek(39);
+        f.seek(40);
         f.writeInt(ManejoUsuarios.UsuarioActivo.getPuntuacionGeneral());
     }
 
     public static void guardarTotalPartidas() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoProgreso;
-        f.seek(43);
+        f.seek(44);
         f.writeInt(ManejoUsuarios.UsuarioActivo.getPartidasTotales());
     }
 
     public static void guardarPartidasPorNivel() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoProgreso;
-        f.seek(47);
+        f.seek(48);
         for (int i = 1; i < 8; i++) {
             f.writeInt(ManejoUsuarios.UsuarioActivo.getPartidasPorNivel(i));
         }
@@ -52,7 +58,7 @@ public class ArchivoGuardar {
 
     public static void guardarTiempoPorNivel() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoProgreso;
-        f.seek(101);
+        f.seek(102);
         for (int i = 1; i < 8; i++) {
             f.writeInt(ManejoUsuarios.UsuarioActivo.getTiempoPorNivel(i));
         }
@@ -91,18 +97,15 @@ public class ArchivoGuardar {
     public static void guardarFechas() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoDatos;
 
-       
         long reg = ManejoUsuarios.UsuarioActivo.getFechaRegistro() == null ? 0L: ManejoUsuarios.UsuarioActivo.getFechaRegistro();
         f.seek(0);
         f.writeLong(reg);
 
-       
         Long anterior = ManejoUsuarios.UsuarioActivo.sesionAnterior; 
         Long actual   = ManejoUsuarios.UsuarioActivo.sesionActual; 
         long ultimaEnMem = ManejoUsuarios.UsuarioActivo.getUltimaSesion() == null
                             ? 0L : ManejoUsuarios.UsuarioActivo.getUltimaSesion();
 
-        
         f.seek(8);
         long ultimaEnArchivo = f.readLong();
 
@@ -110,13 +113,10 @@ public class ArchivoGuardar {
         if ((ultimaEnArchivo == 0L || ultimaEnMem == 0L) &&
             (anterior == null || anterior == 0L) &&
             (actual != null && actual > 0L)) {
-            
             valueUltima = actual;
         } else if (anterior != null && anterior > 0L) {
-            
             valueUltima = anterior;
         } else {
-            
             valueUltima = (ultimaEnMem != 0L) ? ultimaEnMem : ultimaEnArchivo;
         }
 
@@ -234,6 +234,7 @@ public class ArchivoGuardar {
             throw new IOException("Archivos no listos.");
         }
 
+        guardarTutorialCompletado(); // NUEVO
         guardarNivelesCompletados();
         guardarMayorPuntuacion();
         guardarTiempoTotal();
@@ -259,14 +260,12 @@ public class ArchivoGuardar {
         }
 
         if (ManejoUsuarios.UsuarioActivo != null) {
-          
             if (ManejoUsuarios.UsuarioActivo.sesionActual != null &&
                 ManejoUsuarios.UsuarioActivo.sesionActual > 0L) {
                 ManejoUsuarios.UsuarioActivo.sesionAnterior = ManejoUsuarios.UsuarioActivo.sesionActual;
             }
         }
 
-        
         renombrarCarpetaUsuarioSiCambio();
 
         guardarTodo();

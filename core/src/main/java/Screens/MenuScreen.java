@@ -64,7 +64,22 @@ public class MenuScreen extends BaseScreen {
         btnUniverso = new TextButton("Universo Sokoban", btnStyle);
         btnExit = new TextButton("Cerrar Sesion", btnStyle);
 
-        btnPlay.addListener(new ClickListener(){ @Override public void clicked(InputEvent e,float x,float y){ game.setScreen(new GameScreen(game, 1)); }});
+        btnPlay.addListener(new ClickListener(){
+            @Override public void clicked(InputEvent e,float x,float y){
+                boolean tutoHecho = false;
+                try {
+                    if (ManejoUsuarios.UsuarioActivo != null) {
+                        tutoHecho = ManejoUsuarios.UsuarioActivo.getTutocomplete();
+                    }
+                } catch (Exception ignored) {}
+                if (!tutoHecho) {
+                    game.setScreen(new TutorialScreen(game));
+                } else {
+                    game.setScreen(new GameScreen(game, 1));
+                }
+            }
+        });
+
         btnLevels.addListener(new ClickListener(){ @Override public void clicked(InputEvent e,float x,float y){ game.setScreen(new TutorialScreen(game)); }});
         btnConfig.addListener(new ClickListener(){ @Override public void clicked(InputEvent e,float x,float y){ game.setScreen(new ConfigScreen(game)); }});
         btnUniverso.addListener(new ClickListener(){ @Override public void clicked(InputEvent e,float x,float y){ }});
@@ -124,6 +139,7 @@ public class MenuScreen extends BaseScreen {
         if (bgMusic != null) { bgMusic.stop(); com.elkinedwin.LogicaUsuario.AudioBus.unregisterMusic(bgMusic); bgMusic.dispose(); bgMusic = null; }
         if (avatarTex != null) { avatarTex.dispose(); avatarTex = null; }
         super.hide();
+        
     }
 
     @Override

@@ -41,6 +41,7 @@ import java.util.concurrent.BlockingQueue;
 
 import com.elkinedwin.LogicaUsuario.AudioBus;
 import com.elkinedwin.LogicaUsuario.AudioX;
+import com.elkinedwin.LogicaUsuario.ManejoUsuarios;
 
 public abstract class BasePlayScreen implements Screen {
 
@@ -342,6 +343,13 @@ public abstract class BasePlayScreen implements Screen {
                 int totalSec = (int) timeChronometer;
                 int moves = p.getMoveCount();
                 int pushes = p.getPushCount();
+                if (level == 0) {
+                    try {
+                        if (ManejoUsuarios.UsuarioActivo != null) {
+                            ManejoUsuarios.UsuarioActivo.setTutocomplete(true);
+                        }
+                    } catch (Exception ignored) {}
+                }
                 app.setScreen(new VictoryScreen(app, level, moves, pushes, totalSec, 7, 0, font));
                 return;
             }
