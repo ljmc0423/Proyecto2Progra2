@@ -11,10 +11,11 @@ import GameLogic.GameConfig;
 import GameLogic.MovementThread;
 import GameLogic.TileMap;
 import com.badlogic.gdx.Input.Keys;
+   // <-- importa AudioX
+import com.elkinedwin.LogicaUsuario.AudioX;
 
 public final class GameScreen extends BasePlayScreen {
 
-    // Texturas
     private Texture boxTexture, boxTexturePlaced, targetTexture;
 
     public GameScreen(Game app, int level) {
@@ -28,17 +29,15 @@ public final class GameScreen extends BasePlayScreen {
         boxTexture = load("textures/box.png");
         boxTexturePlaced = load("textures/boxPlaced.png");
         targetTexture = load("textures/target.png");
-        boxPlacedSound = loadSound("audios/box_placed.wav");
 
+        // antes: boxPlacedSound = loadSound("audios/box_placed.wav");
+        boxPlacedSound = AudioX.newSound("audios/box_placed.wav");
     }
 
     @Override
     protected void onUpdate(float delta) {
         super.onUpdate(delta);
-        
-        if (paused) {
-            return;
-        }
+        if (paused) return;
 
         int reiniciarKey = getCfgKey("Reiniciar", R);
         if (input.isKeyJustPressed(reiniciarKey)) {
@@ -47,21 +46,16 @@ public final class GameScreen extends BasePlayScreen {
     }
 
     private void resetLevel() {
-        resetLevelSound.play(1.0f);
+        // antes: resetLevelSound.play(1.0f);
+        AudioX.play(resetLevelSound, 1.0f);
 
         try {
-            if (movementThreadLogic != null) {
-                movementThreadLogic.stop();
-            }
-            if (movementThread != null) {
-                movementThread.interrupt();
-            }
-        } catch (Exception ignored) {
-        }
+            if (movementThreadLogic != null) movementThreadLogic.stop();
+            if (movementThread != null) movementThread.interrupt();
+        } catch (Exception ignored) {}
 
-        // Recargar nivel
         game.startLevel(level);
-        setPlayer(game.getPlayer()); // re-sincroniza BasePlayScreen
+        setPlayer(game.getPlayer());
 
         timeChronometer = 0f;
         tweenActive = false;
@@ -71,7 +65,6 @@ public final class GameScreen extends BasePlayScreen {
         prevY = game.getPlayer().getY();
         prevPushes = game.getPlayer().getPushCount();
 
-        // Crear nuevo hilo con las nuevas referencias
         directionQueue = new ArrayBlockingQueue<>(1);
         movementThreadLogic = new MovementThread(directionQueue, game.getMap(), game.getPlayer());
         movementThread = new Thread(movementThreadLogic);
