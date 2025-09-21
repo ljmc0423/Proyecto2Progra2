@@ -224,6 +224,10 @@ public abstract class BasePlayScreen implements Screen {
 
     @Override
     public void hide() {
+        if (bgMusic != null) {
+            bgMusic.stop();
+            AudioBus.unregisterMusic(bgMusic);
+        }
     }
 
     @Override
@@ -375,7 +379,8 @@ public abstract class BasePlayScreen implements Screen {
                         if (ManejoUsuarios.UsuarioActivo != null) {
                             ManejoUsuarios.UsuarioActivo.setTutocomplete(true);
                         }
-                    } catch (Exception ignored) {}
+                    } catch (Exception ignored) {
+                    }
                 }
                 app.setScreen(new VictoryScreen(app, level, moves, pushes, totalSec, 7, 0, font));
                 return;
