@@ -375,7 +375,7 @@ public abstract class BasePlayScreen implements Screen {
                 // suma de sesión solo si es gameplay
                 submitLevelSessionTime();
 
-                app.setScreen(new VictoryScreen(app, level, moves, pushes, totalSec, 7, 0, font));
+                app.setScreen(new VictoryScreen(app, level, moves, pushes, totalSec, 7, font));
                 return;
             }
 
