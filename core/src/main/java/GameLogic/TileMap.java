@@ -51,7 +51,7 @@ public class TileMap {
     }
 
     public boolean isFree(char ch) {
-        return ch == FLOOR || ch == TARGET || ch == CARPET;
+        return ch == FLOOR || ch == TARGET || ch == CARPET || ch == ELEVATOR;
     }
 
     public boolean isWall(char ch) {

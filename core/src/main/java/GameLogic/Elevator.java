@@ -1,3 +1,4 @@
+// GameLogic/Elevator.java
 package GameLogic;
 
 public final class Elevator {
@@ -6,21 +7,37 @@ public final class Elevator {
         CLOSED, OPENING, OPEN, CLOSING
     }
 
-    private final int tileX, tileY; 
+    private final int tileX, tileY;
     private State state = State.CLOSED;
-
     private float progress = 0f;
     private final float speed = 4.0f;
+
+    private boolean lockClose = false; // evita reabrir durante cierre
 
     public Elevator(int tileX, int tileY) {
         this.tileX = tileX;
         this.tileY = tileY;
     }
 
-    public void update(float delta, Player player) {
-        boolean playerInFront = (player.getX() == tileX && player.getY() == tileY - 1);
+    public void forceOpen() {
+        lockClose = false;
+        state = State.OPEN;
+        progress = 1f;
+    }
 
-        State target = playerInFront ? State.OPEN : State.CLOSED;
+    public void beginClosing() {
+        lockClose = true;
+        if (state != State.CLOSED) {
+            state = State.CLOSING;
+        }
+    }
+
+    public void update(float delta, Player player) {
+        boolean inFront = (player.getX() == tileX && player.getY() == tileY - 1);
+        boolean onTile = (player.getX() == tileX && player.getY() == tileY);
+
+        boolean shouldOpen = (inFront || onTile) && !lockClose;
+        State target = shouldOpen ? State.OPEN : State.CLOSED;
 
         if (target == State.OPEN) {
             if (state == State.CLOSED || state == State.CLOSING) {
@@ -43,6 +60,7 @@ public final class Elevator {
             if (progress <= 0f) {
                 progress = 0f;
                 state = State.CLOSED;
+                lockClose = false;
             }
         }
     }

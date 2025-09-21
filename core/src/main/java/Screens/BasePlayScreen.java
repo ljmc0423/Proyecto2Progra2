@@ -21,7 +21,6 @@ import GameLogic.GameConfig;
 import GameLogic.MovementThread;
 import GameLogic.Player;
 import GameLogic.SokobanGame;
-import GameLogic.TileMap;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -215,16 +214,29 @@ public abstract class BasePlayScreen implements Screen {
         pauseStage.getViewport().update(width, height, true);
     }
 
-    @Override public void pause() {}
-    @Override public void resume() {}
-    @Override public void hide() {}
+    @Override
+    public void pause() {
+    }
+
+    @Override
+    public void resume() {
+    }
+
+    @Override
+    public void hide() {
+    }
 
     @Override
     public void dispose() {
         try {
-            if (movementThreadLogic != null) movementThreadLogic.stop();
-            if (movementThread != null) movementThread.interrupt();
-        } catch (Exception ignored) {}
+            if (movementThreadLogic != null) {
+                movementThreadLogic.stop();
+            }
+            if (movementThread != null) {
+                movementThread.interrupt();
+            }
+        } catch (Exception ignored) {
+        }
         pauseStage.dispose();
         onDisposeExtra();
         batch.dispose();
@@ -232,8 +244,11 @@ public abstract class BasePlayScreen implements Screen {
     }
 
     protected abstract void onShowExtra();
+
     protected abstract void onDrawMap();
+
     protected abstract void onDrawHUD();
+
     protected abstract void onDisposeExtra();
 
     protected void onUpdate(float delta) {
@@ -244,16 +259,22 @@ public abstract class BasePlayScreen implements Screen {
             if (paused) {
                 directionQueue.clear();
                 pauseRoot.setVisible(true);
-                if (bgMusic != null) bgMusic.pause();
+                if (bgMusic != null) {
+                    bgMusic.pause();
+                }
                 input.setInputProcessor(pauseStage);
             } else {
                 pauseRoot.setVisible(false);
-                if (bgMusic != null) bgMusic.play();
+                if (bgMusic != null) {
+                    bgMusic.play();
+                }
                 input.setInputProcessor(null);
             }
         }
 
-        if (paused) return;
+        if (paused) {
+            return;
+        }
 
         timeChronometer += delta;
 
@@ -272,7 +293,9 @@ public abstract class BasePlayScreen implements Screen {
     }
 
     private void handleHeldInput(float delta) {
-        if (tweenActive || moveRequested) return;
+        if (tweenActive || moveRequested) {
+            return;
+        }
 
         Directions currentHeld = readHeldDirection();
         if (currentHeld == null) {
@@ -301,7 +324,9 @@ public abstract class BasePlayScreen implements Screen {
     }
 
     private void enqueueDirection(Directions dir) {
-        if (tweenActive || moveRequested) return;
+        if (tweenActive || moveRequested) {
+            return;
+        }
         if (directionQueue.offer(dir)) {
             moveRequested = true;
         }
@@ -339,7 +364,9 @@ public abstract class BasePlayScreen implements Screen {
 
             game.recomputeVictory();
             if (game.isVictory()) {
-                if (bgMusic != null) bgMusic.stop();
+                if (bgMusic != null) {
+                    bgMusic.stop();
+                }
                 int totalSec = (int) timeChronometer;
                 int moves = p.getMoveCount();
                 int pushes = p.getPushCount();
@@ -375,21 +402,21 @@ public abstract class BasePlayScreen implements Screen {
         wallTexture = load("textures/wall.png");
 
         Texture downWalk1 = load("textures/player_down_walk1.png");
-        Texture downIdle  = load("textures/player_down_idle.png");
+        Texture downIdle = load("textures/player_down_idle.png");
         Texture downWalk2 = load("textures/player_down_walk2.png");
-        Texture upWalk1   = load("textures/player_up_walk1.png");
-        Texture upIdle    = load("textures/player_up_idle.png");
-        Texture upWalk2   = load("textures/player_up_walk2.png");
+        Texture upWalk1 = load("textures/player_up_walk1.png");
+        Texture upIdle = load("textures/player_up_idle.png");
+        Texture upWalk2 = load("textures/player_up_walk2.png");
         Texture leftWalk1 = load("textures/player_left_walk1.png");
-        Texture leftIdle  = load("textures/player_left_idle.png");
+        Texture leftIdle = load("textures/player_left_idle.png");
         Texture leftWalk2 = load("textures/player_left_walk2.png");
-        Texture rightWalk1= load("textures/player_right_walk1.png");
+        Texture rightWalk1 = load("textures/player_right_walk1.png");
         Texture rightIdle = load("textures/player_right_idle.png");
-        Texture rightWalk2= load("textures/player_right_walk2.png");
+        Texture rightWalk2 = load("textures/player_right_walk2.png");
 
-        kUp    = getCfgKey("Arriba", Input.Keys.UP);
-        kDown  = getCfgKey("Abajo", Input.Keys.DOWN);
-        kLeft  = getCfgKey("Izquierda", Input.Keys.LEFT);
+        kUp = getCfgKey("Arriba", Input.Keys.UP);
+        kDown = getCfgKey("Abajo", Input.Keys.DOWN);
+        kLeft = getCfgKey("Izquierda", Input.Keys.LEFT);
         kRight = getCfgKey("Derecha", Input.Keys.RIGHT);
         kReset = getCfgKey("Reiniciar", Input.Keys.R);
         kPause = getCfgKey("Pausar", Input.Keys.ESCAPE);
@@ -401,14 +428,14 @@ public abstract class BasePlayScreen implements Screen {
         sReset = Input.Keys.toString(kReset);
         sPause = Input.Keys.toString(kPause);
 
-        downFrames  = new Texture[]{downWalk1, downIdle, downWalk2};
-        upFrames    = new Texture[]{upWalk1, upIdle, upWalk2};
-        leftFrames  = new Texture[]{leftWalk1, leftIdle, leftWalk2};
+        downFrames = new Texture[]{downWalk1, downIdle, downWalk2};
+        upFrames = new Texture[]{upWalk1, upIdle, upWalk2};
+        leftFrames = new Texture[]{leftWalk1, leftIdle, leftWalk2};
         rightFrames = new Texture[]{rightWalk1, rightIdle, rightWalk2};
 
-        stepSound        = AudioX.newSound("audios/step.wav");
-        resetLevelSound  = AudioX.newSound("audios/reset_level.wav");
-        bgMusic          = AudioX.newMusic("audios/levelSong.mp3");
+        stepSound = AudioX.newSound("audios/step.wav");
+        resetLevelSound = AudioX.newSound("audios/reset_level.wav");
+        bgMusic = AudioX.newMusic("audios/levelSong.mp3");
         bgMusic.setLooping(true);
         bgMusic.play();
 
@@ -424,10 +451,18 @@ public abstract class BasePlayScreen implements Screen {
         wallTexture.dispose();
         btnTexture.dispose();
 
-        for (Texture t : downFrames) t.dispose();
-        for (Texture t : upFrames) t.dispose();
-        for (Texture t : leftFrames) t.dispose();
-        for (Texture t : rightFrames) t.dispose();
+        for (Texture t : downFrames) {
+            t.dispose();
+        }
+        for (Texture t : upFrames) {
+            t.dispose();
+        }
+        for (Texture t : leftFrames) {
+            t.dispose();
+        }
+        for (Texture t : rightFrames) {
+            t.dispose();
+        }
 
         stepSound.dispose();
         resetLevelSound.dispose();
@@ -445,9 +480,12 @@ public abstract class BasePlayScreen implements Screen {
             Usuario usuario = com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo;
             if (usuario != null && usuario.configuracion != null) {
                 Integer v = usuario.configuracion.get(name);
-                if (v != null && v != 0) return v;
+                if (v != null && v != 0) {
+                    return v;
+                }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         return def;
     }
 
@@ -457,10 +495,18 @@ public abstract class BasePlayScreen implements Screen {
         kLeft = getCfgKey("MoverIzq", LEFT);
         kRight = getCfgKey("MoverDer", RIGHT);
 
-        if (input.isKeyPressed(kUp))    return Directions.UP;
-        if (input.isKeyPressed(kDown))  return Directions.DOWN;
-        if (input.isKeyPressed(kLeft))  return Directions.LEFT;
-        if (input.isKeyPressed(kRight)) return Directions.RIGHT;
+        if (input.isKeyPressed(kUp)) {
+            return Directions.UP;
+        }
+        if (input.isKeyPressed(kDown)) {
+            return Directions.DOWN;
+        }
+        if (input.isKeyPressed(kLeft)) {
+            return Directions.LEFT;
+        }
+        if (input.isKeyPressed(kRight)) {
+            return Directions.RIGHT;
+        }
         return null;
     }
 
@@ -478,7 +524,9 @@ public abstract class BasePlayScreen implements Screen {
     }
 
     protected void advanceTween(float delta) {
-        if (!tweenActive) return;
+        if (!tweenActive) {
+            return;
+        }
 
         tweenTime += delta;
         float t = tweenTime / tweenDuration;
@@ -500,16 +548,29 @@ public abstract class BasePlayScreen implements Screen {
     protected Texture pickFrameForFacing() {
         Texture arr[];
         switch (facing) {
-            case UP:    arr = upFrames; break;
-            case DOWN:  arr = downFrames; break;
-            case LEFT:  arr = leftFrames; break;
-            case RIGHT: arr = rightFrames; break;
-            default:    arr = downFrames;
+            case UP:
+                arr = upFrames;
+                break;
+            case DOWN:
+                arr = downFrames;
+                break;
+            case LEFT:
+                arr = leftFrames;
+                break;
+            case RIGHT:
+                arr = rightFrames;
+                break;
+            default:
+                arr = downFrames;
         }
-        if (!tweenActive) return arr[1];
+        if (!tweenActive) {
+            return arr[1];
+        }
         float t = tweenTime / tweenDuration;
         int idx = (int) (t * 3.0f);
-        if (idx > 2) idx = 2;
+        if (idx > 2) {
+            idx = 2;
+        }
         return arr[idx];
     }
 }
