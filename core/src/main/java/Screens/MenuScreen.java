@@ -38,18 +38,22 @@ public class MenuScreen extends BaseScreen {
     private Texture avatarTex;
     private Image avatarImg;
 
-    public MenuScreen(Game game) { this.game = game; }
+    public MenuScreen(Game game) {
+        this.game = game;
+    }
 
     @Override
     protected void onShow() {
         generator = new FreeTypeFontGenerator(files.internal("fonts/pokemon_fire_red.ttf"));
 
         FreeTypeFontGenerator.FreeTypeFontParameter pt = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        pt.size = 136; pt.color = Color.valueOf("E6DFC9");
+        pt.size = 136;
+        pt.color = Color.valueOf("E6DFC9");
         titleFont = generator.generateFont(pt);
 
         FreeTypeFontGenerator.FreeTypeFontParameter pb = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        pb.size = 72; pb.color = Color.valueOf("E6DFC9");
+        pb.size = 72;
+        pb.color = Color.valueOf("E6DFC9");
         buttonFont = generator.generateFont(pb);
 
         Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, titleFont.getColor());
@@ -64,37 +68,57 @@ public class MenuScreen extends BaseScreen {
         btnUniverso = new TextButton("Universo Sokoban", btnStyle);
         btnExit = new TextButton("Cerrar Sesion", btnStyle);
 
-<<<<<<< Updated upstream
-        btnPlay.addListener(new ClickListener(){
-            @Override public void clicked(InputEvent e,float x,float y){
+        btnPlay.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
                 boolean tutoHecho = false;
                 try {
                     if (ManejoUsuarios.UsuarioActivo != null) {
                         tutoHecho = ManejoUsuarios.UsuarioActivo.getTutocomplete();
                     }
-                } catch (Exception ignored) {}
+                } catch (Exception ignored) {
+                }
                 if (!tutoHecho) {
                     game.setScreen(new TutorialScreen(game));
                 } else {
-                    game.setScreen(new GameScreen(game, 1));
+                    game.setScreen(new StageScreen(game));
                 }
             }
         });
 
-=======
-        btnPlay.addListener(new ClickListener(){ @Override public void clicked(InputEvent e,float x,float y){ game.setScreen(new StageScreen(game)); }});
->>>>>>> Stashed changes
-        btnLevels.addListener(new ClickListener(){ @Override public void clicked(InputEvent e,float x,float y){ game.setScreen(new TutorialScreen(game)); }});
-        btnConfig.addListener(new ClickListener(){ @Override public void clicked(InputEvent e,float x,float y){ game.setScreen(new ConfigScreen(game)); }});
-        btnUniverso.addListener(new ClickListener(){ @Override public void clicked(InputEvent e,float x,float y){ }});
-        btnExit.addListener(new ClickListener(){
-            @Override public void clicked(InputEvent e,float x,float y){
-                try { ArchivoGuardar.guardarTodoCerrarSesion(); } catch (IOException ignored) {}
-                finally { ManejoUsuarios.UsuarioActivo = null; game.setScreen(new LoginScreen(game)); }
+        btnLevels.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
+                game.setScreen(new TutorialScreen(game));
+            }
+        });
+        btnConfig.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
+                game.setScreen(new ConfigScreen(game));
+            }
+        });
+        btnUniverso.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
+            }
+        });
+        btnExit.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
+                try {
+                    ArchivoGuardar.guardarTodoCerrarSesion();
+                } catch (IOException ignored) {
+                } finally {
+                    ManejoUsuarios.UsuarioActivo = null;
+                    game.setScreen(new LoginScreen(game));
+                }
             }
         });
 
-        Table root = new Table(); root.setFillParent(true); stage.addActor(root);
+        Table root = new Table();
+        root.setFillParent(true);
+        stage.addActor(root);
         root.top().padTop(40f);
         root.add(lblTitle).center().padBottom(60f).row();
         root.defaults().padTop(18f).padBottom(18f).center();
@@ -108,9 +132,12 @@ public class MenuScreen extends BaseScreen {
         try {
             if (ManejoUsuarios.UsuarioActivo != null && ManejoUsuarios.UsuarioActivo.configuracion != null) {
                 Integer v = ManejoUsuarios.UsuarioActivo.configuracion.get("Volumen");
-                if (v != null) volCfg = v;
+                if (v != null) {
+                    volCfg = v;
+                }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+        }
         AudioBus.setMasterVolume(volCfg / 100f);
 
         bgMusic = AudioX.newMusic("audios/menu_bg_song.mp3");
@@ -121,7 +148,9 @@ public class MenuScreen extends BaseScreen {
         String username = (u != null && u.getUsuario() != null) ? u.getUsuario() : "Invitado";
 
         String avatarPath = "ui/default_avatar.png";
-        if (u != null && u.avatar != null && !u.avatar.trim().isEmpty() && files.internal(u.avatar).exists()) avatarPath = u.avatar;
+        if (u != null && u.avatar != null && !u.avatar.trim().isEmpty() && files.internal(u.avatar).exists()) {
+            avatarPath = u.avatar;
+        }
 
         Label.LabelStyle userStyle = new Label.LabelStyle(buttonFont, Color.WHITE);
         userLabel = new Label(username, userStyle);
@@ -129,9 +158,15 @@ public class MenuScreen extends BaseScreen {
 
         avatarTex = new Texture(avatarPath);
         avatarImg = new Image(avatarTex);
-        avatarImg.addListener(new ClickListener(){ @Override public void clicked(InputEvent e,float x,float y){ game.setScreen(new MiPerfilScreen(game)); }});
+        avatarImg.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
+                game.setScreen(new MiPerfilScreen(game));
+            }
+        });
 
-        Table topRight = new Table(); topRight.setFillParent(true);
+        Table topRight = new Table();
+        topRight.setFillParent(true);
         topRight.top().right().padTop(14f).padRight(16f);
         topRight.add(userLabel).padRight(10f).center();
         topRight.add(avatarImg).size(112f, 112f).center();
@@ -140,10 +175,18 @@ public class MenuScreen extends BaseScreen {
 
     @Override
     public void hide() {
-        if (bgMusic != null) { bgMusic.stop(); com.elkinedwin.LogicaUsuario.AudioBus.unregisterMusic(bgMusic); bgMusic.dispose(); bgMusic = null; }
-        if (avatarTex != null) { avatarTex.dispose(); avatarTex = null; }
+        if (bgMusic != null) {
+            bgMusic.stop();
+            com.elkinedwin.LogicaUsuario.AudioBus.unregisterMusic(bgMusic);
+            bgMusic.dispose();
+            bgMusic = null;
+        }
+        if (avatarTex != null) {
+            avatarTex.dispose();
+            avatarTex = null;
+        }
         super.hide();
-        
+
     }
 
     @Override

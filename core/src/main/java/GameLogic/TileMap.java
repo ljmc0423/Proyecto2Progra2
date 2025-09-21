@@ -13,6 +13,9 @@ public class TileMap {
     public static final char PLAYER_ON_TARGET = '&';
     public static final char CARPET = '!';
     public static final char ELEVATOR = '?';
+    public static final char ELEVATOR_BUTTONS = '(';
+    public static final char ELEVATOR_WALL = '/';
+    public static final char BLACK = '-';
 
     public TileMap(char tileMap[][]) {
         this.tileMap = tileMap;
@@ -56,5 +59,13 @@ public class TileMap {
 
     public boolean isWall(char ch) {
         return ch == WALL;
+    }
+    
+    public boolean isElevatorWall(char ch) {
+        return ch == ELEVATOR_WALL;
+    }
+    
+    public boolean isElevatorButton(char ch) {
+        return ch == ELEVATOR_BUTTONS;
     }
 }

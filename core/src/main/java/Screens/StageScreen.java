@@ -6,6 +6,7 @@ import GameLogic.GameConfig;
 import GameLogic.TileMap;
 import GameLogic.Elevator;
 import GameLogic.Directions;
+import GameLogic.Phase;
 
 public final class StageScreen extends BasePlayScreen {
 
@@ -15,7 +16,6 @@ public final class StageScreen extends BasePlayScreen {
 
     private final int elevatorX = 16, elevatorY = 12;
 
-    private enum Phase { NONE, WAIT_OPEN, CLOSING, POST_CLOSE }
     private Phase phase = Phase.NONE;
     private float phaseTime = 0f;
 
