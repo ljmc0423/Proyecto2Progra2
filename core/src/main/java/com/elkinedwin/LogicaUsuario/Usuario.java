@@ -17,12 +17,15 @@ public class Usuario {
     public  Long sesionActual;
     public  Long sesionAnterior;
 
-    private ArrayList<Integer> mayorPuntuacion = new ArrayList<>();
+    // Por nivel (1..7) indexado con nivel-1
+    private ArrayList<Integer> mayorPuntuacion = new ArrayList<>();     // menor cantidad de pasos
     private ArrayList<Boolean> nivelesCompletados = new ArrayList<>();
+    private ArrayList<Integer> tiempoPorNivel = new ArrayList<>();      // suma de tiempos (s) en partidas ganadas
+    private ArrayList<Integer> partidasPorNivel = new ArrayList<>();    // # partidas ganadas por nivel
+    private ArrayList<Integer> mejorTiempoPorNivel = new ArrayList<>(); // menor tiempo (s) por nivel
+
     private int tiempoJugadoTotal = 0;
     private Boolean Tutocomplete;
-
-    private ArrayList<Integer> tiempoPorNivel = new ArrayList<>();
 
     public Map<String, Integer> configuracion = new HashMap<>();
     public String avatar;
@@ -30,10 +33,9 @@ public class Usuario {
     private int puntuacionGeneral = 0;
 
     private ArrayList<Usuario> amigos = new ArrayList<>();
-    private int[] tiempoPromedio = new int[7]; // 7 niveles
+    private int[] tiempoPromedio = new int[7]; // promedio por nivel en segundos
 
     public ArrayList<Partida> historial = new ArrayList<>();
-    private ArrayList<Integer> partidasPorNivel = new ArrayList<>();
 
     private int partidasTotales = 0;
 
@@ -51,6 +53,7 @@ public class Usuario {
         for (int i = 0; i < 7; i++) nivelesCompletados.add(false);
         for (int i = 0; i < 7; i++) tiempoPorNivel.add(0);
         for (int i = 0; i < 7; i++) partidasPorNivel.add(0);
+        for (int i = 0; i < 7; i++) mejorTiempoPorNivel.add(0);
 
         configuracion.put("Volumen", 80);
         configuracion.put("MoverArriba", 19);
@@ -63,61 +66,43 @@ public class Usuario {
         for (int i = 0; i < tiempoPromedio.length; i++) tiempoPromedio[i] = 0;
     }
 
-   
-
-    
     public void recalcularTiempoPromedio() {
         for (int i = 0; i < 7; i++) {
             int partidas = partidasPorNivel.get(i);
             int tiempo = tiempoPorNivel.get(i);
-            if (partidas > 0) {
-                tiempoPromedio[i] = tiempo / partidas;
-            } else {
-                tiempoPromedio[i] = 0;
-            }
+            tiempoPromedio[i] = (partidas > 0) ? (tiempo / partidas) : 0;
         }
     }
 
-    public Boolean getTutocomplete() {
-        return Tutocomplete;
-    }
+    public Boolean getTutocomplete() { return Tutocomplete; }
+    public void setTutocomplete(Boolean tutocomplete) { this.Tutocomplete = tutocomplete; }
 
-    public void setTutocomplete(Boolean tutocomplete) {
-        this.Tutocomplete = tutocomplete;
-    }
-
- 
     public void recalcularTiempoPromedioNivel(int nivel) {
         int idx = nivel - 1;
         int partidas = partidasPorNivel.get(idx);
         int tiempo = tiempoPorNivel.get(idx);
-        if (partidas > 0) {
-            tiempoPromedio[idx] = tiempo / partidas;
-        } else {
-            tiempoPromedio[idx] = 0;
-        }
+        tiempoPromedio[idx] = (partidas > 0) ? (tiempo / partidas) : 0;
     }
 
-    
     public int getTiempoPromedioNivel(int nivel) {
         return tiempoPromedio[nivel - 1];
     }
 
-   
-    public int[] getTiemposPromedio() {
-        return tiempoPromedio;
-    }
+    public int[] getTiemposPromedio() { return tiempoPromedio; }
 
-    
+    // Sumar tiempo de una partida GANADA de "nivel" y actualizar promedio
     public void acumularPartida(int nivel, int tiempoSegundos) {
         int idx = nivel - 1;
         tiempoPorNivel.set(idx, tiempoPorNivel.get(idx) + tiempoSegundos);
         partidasPorNivel.set(idx, partidasPorNivel.get(idx) + 1);
         partidasTotales++;
+        tiempoJugadoTotal += tiempoSegundos;
         recalcularTiempoPromedioNivel(nivel);
     }
 
-    
+    // Mejor tiempo por nivel (min en segundos). 0 => no existe aún
+    public int getMejorTiempoPorNivel(int nivel) { return mejorTiempoPorNivel.get(nivel - 1); }
+    public void setMejorTiempoPorNivel(int nivel, int v) { mejorTiempoPorNivel.set(nivel - 1, v); }
 
     public int getPartidasTotales() { return partidasTotales; }
     public void setPartidasTotales(int v) { this.partidasTotales = v; }
@@ -150,37 +135,19 @@ public class Usuario {
         this.sesionAnterior = v;
     }
 
-    public void setNivelCompletado(int nivel, Boolean estado){
-        nivelesCompletados.set(nivel - 1, estado);
-    }
-    public boolean getNivelCompletado(int nivel){
-        return nivelesCompletados.get(nivel - 1);
-    }
+    public void setNivelCompletado(int nivel, Boolean estado){ nivelesCompletados.set(nivel - 1, estado); }
+    public boolean getNivelCompletado(int nivel){ return nivelesCompletados.get(nivel - 1); }
 
-    public void setMayorPuntuacion(int nivel, int puntuacion){
-        mayorPuntuacion.set(nivel - 1, puntuacion);
-    }
-    public int getMayorPuntuacion(int nivel){
-        return mayorPuntuacion.get(nivel - 1);
-    }
+    public void setMayorPuntuacion(int nivel, int puntuacion){ mayorPuntuacion.set(nivel - 1, puntuacion); }
+    public int getMayorPuntuacion(int nivel){ return mayorPuntuacion.get(nivel - 1); }
 
-    public void setPartidasPorNivel(int nivel, int partidas){
-        partidasPorNivel.set(nivel - 1, partidas);
-    }
-    public int getPartidasPorNivel(int nivel){
-        return partidasPorNivel.get(nivel - 1);
-    }
+    public void setPartidasPorNivel(int nivel, int partidas){ partidasPorNivel.set(nivel - 1, partidas); }
+    public int getPartidasPorNivel(int nivel){ return partidasPorNivel.get(nivel - 1); }
 
-    public void setTiempoPorNivel(int nivel, int tiempo){
-        tiempoPorNivel.set(nivel - 1, tiempo);
-    }
-    public int getTiempoPorNivel(int nivel){
-        return tiempoPorNivel.get(nivel - 1);
-    }
+    public void setTiempoPorNivel(int nivel, int tiempo){ tiempoPorNivel.set(nivel - 1, tiempo); }
+    public int getTiempoPorNivel(int nivel){ return tiempoPorNivel.get(nivel - 1); }
 
-    public void setConfiguracion(String clave, int valor){
-        configuracion.put(clave, valor);
-    }
+    public void setConfiguracion(String clave, int valor){ configuracion.put(clave, valor); }
     public int getConfiguracion(String clave){
         Integer v = configuracion.get(clave);
         return (v == null) ? 0 : v;

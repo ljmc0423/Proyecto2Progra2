@@ -166,19 +166,18 @@ public class MiPerfilScreen extends BaseScreen {
         cardInfo.add(rPass).expandX().fillX().row();
         addDivider(cardInfo, dividerBg);
 
-        cardInfo.add(kvRow("Fecha de registro", formatMillis(u != null ? u.getFechaRegistro() : null), keyStyle, valStyle)).expandX().fillX().row();
-        addDivider(cardInfo, dividerBg);
-
-        cardInfo.add(kvRow("Ultima sesion", (u != null ? u.getUltimaSesionTexto() : "-"), keyStyle, valStyle)).expandX().fillX().row();
-        addDivider(cardInfo, dividerBg);
-
         int totalSeg = (u != null) ? u.getTiempoJugadoTotal() : 0;
-        String totalFmt = formatSeconds(totalSeg) + "   (" + (totalSeg/60) + " min)";
+        String totalFmt = formatSecondsHuman(totalSeg) + "   (" + (totalSeg/60) + " min)";
         cardInfo.add(kvRow("Tiempo total de juego", totalFmt, keyStyle, valStyle)).expandX().fillX().row();
+        addDivider(cardInfo, dividerBg);
+
+        int partidasJugadas = 0;
+        if (u != null && u.historial != null) partidasJugadas = u.historial.size();
+        cardInfo.add(kvRow("Total partidas jugadas", String.valueOf(partidasJugadas), keyStyle, valStyle)).expandX().fillX().row();
 
         content.add(cardInfo).expandX().fillX().row();
 
-        content.add(cardHeader("Progreso", h2Style)).expandX().fillX().padTop(12f).row();
+        content.add(cardHeader("Mis Estadisticas", h2Style)).expandX().fillX().padTop(12f).row();
 
         Table cardProg = new Table();
         cardProg.setBackground(panelBg);
@@ -187,24 +186,40 @@ public class MiPerfilScreen extends BaseScreen {
 
         Table header = new Table();
         header.defaults().left().pad(6f);
-        header.add(new Label("Nivel", thStyle)).width(140f);
-        header.add(new Label("Estado", thStyle)).width(260f);
-        header.add(new Label("Tiempo promedio", thStyle)).width(260f);
-        header.add(new Label("Mayor puntuacion", thStyle)).width(240f).row();
+        header.add(new Label("Nivel", thStyle)).width(120f);
+        header.add(new Label("Estado", thStyle)).width(200f);
+        header.add(new Label("Partidas", thStyle)).width(120f);
+        header.add(new Label("Tiempo promedio ", thStyle)).width(220f);
+        header.add(new Label("Mejor tiempo", thStyle)).width(200f);
+        header.add(new Label("Mejor puntuacion", thStyle)).width(200f).row();
         cardProg.add(header).expandX().fillX().row();
 
         for (int n = 1; n <= 7; n++) {
             boolean completo = (u != null) && u.getNivelCompletado(n);
             int promedio = 0;
-            if (u != null) { try { promedio = u.getTiempoPromedioNivel(n - 1); } catch (Throwable ignored) {} }
-            int best = (u != null) ? u.getMayorPuntuacion(n) : 0;
+            int mejorTiempo = 0;
+            int bestSteps = 0;
+            int partidasNivel = 0;
+            if (u != null) {
+                try { promedio = u.getTiempoPromedioNivel(n); } catch (Throwable ignored) {}
+                try { mejorTiempo = u.getMejorTiempoPorNivel(n); } catch (Throwable ignored) {}
+                try { bestSteps = u.getMayorPuntuacion(n); } catch (Throwable ignored) {}
+                try { partidasNivel = u.getPartidasPorNivel(n); } catch (Throwable ignored) {}
+            }
+
+            String partidasTxt      = (partidasNivel > 0) ? String.valueOf(partidasNivel) : "-";
+            String promedioTxt      = (promedio > 0) ? formatSecondsHuman(promedio) : "-";
+            String mejorTiempoTxt   = (mejorTiempo > 0) ? formatSecondsHuman(mejorTiempo) : "-";
+            String bestStepsTxt     = (bestSteps > 0) ? (bestSteps + " pasos") : "-";
 
             Table row = new Table();
             row.defaults().left().pad(6f);
-            row.add(new Label("Nivel " + n, cellStyle)).width(140f);
-            row.add(new Label(completo ? "Completado" : "Sin completar", cellStyle)).width(260f);
-            row.add(new Label(formatSeconds(promedio), cellStyle)).width(260f);
-            row.add(new Label(String.valueOf(best), cellStyle)).width(240f).row();
+            row.add(new Label("Nivel " + n, cellStyle)).width(120f);
+            row.add(new Label(completo ? "Completado" : "Sin completar", cellStyle)).width(200f);
+            row.add(new Label(partidasTxt, cellStyle)).width(120f);
+            row.add(new Label(promedioTxt, cellStyle)).width(220f);
+            row.add(new Label(mejorTiempoTxt, cellStyle)).width(200f);
+            row.add(new Label(bestStepsTxt, cellStyle)).width(200f).row();
 
             cardProg.add(row).expandX().fillX().row();
 
@@ -431,10 +446,14 @@ public class MiPerfilScreen extends BaseScreen {
         return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date(m));
     }
 
-    private String formatSeconds(int sec){
-        int h = sec / 3600, m = (sec % 3600) / 60, s = sec % 60;
-        if (h > 0) return String.format("%dh %02dm %02ds", h, m, s);
-        if (m > 0) return String.format("%dm %02ds", m, s);
+    // Formato humano: s / min / h
+    private String formatSecondsHuman(int sec){
+        if (sec <= 0) return "0 s";
+        int h = sec / 3600;
+        int m = (sec % 3600) / 60;
+        int s = sec % 60;
+        if (h > 0) return String.format("%dh %02dmin %02ds", h, m, s);
+        if (m > 0) return String.format("%dmin %02ds", m, s);
         return String.format("%ds", s);
     }
 

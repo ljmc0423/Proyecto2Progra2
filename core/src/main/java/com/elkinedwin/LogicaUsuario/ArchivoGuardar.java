@@ -6,8 +6,6 @@ import java.io.RandomAccessFile;
 
 public class ArchivoGuardar {
 
-    // ===== PROGRESO.BIN =====
-
     public static void guardarTutorialCompletado() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoProgreso;
         f.seek(0);
@@ -64,11 +62,17 @@ public class ArchivoGuardar {
         }
     }
 
-    // ===== CONFIG.BIN =====
+    // nuevo bloque: mejorTiempoPorNivel
+    public static void guardarMejorTiempoPorNivel() throws IOException{
+        RandomAccessFile f = ManejoArchivos.archivoProgreso;
+        f.seek(130);
+        for (int i = 1; i < 8; i++) {
+            f.writeInt(ManejoUsuarios.UsuarioActivo.getMejorTiempoPorNivel(i));
+        }
+    }
 
     public static void guardarConfiguracion() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoConfig;
-
         int vol       = ManejoUsuarios.UsuarioActivo.getConfiguracion("Volumen");
         int arriba    = ManejoUsuarios.UsuarioActivo.getConfiguracion("MoverArriba");
         int abajo     = ManejoUsuarios.UsuarioActivo.getConfiguracion("MoverAbajo");
@@ -86,14 +90,6 @@ public class ArchivoGuardar {
         f.seek(24); f.writeInt(idioma);
     }
 
-    // ===== DATOS.BIN =====
-    // Reglas:
-    // - fechaRegistro: no cambia.
-    // - ultimaSesion:
-    //   * Primer login: si ultimaSesion guardada es 0 y no hay sesionAnterior, usar sesionActual.
-    //   * Logins siguientes: ultimaSesion se actualiza al cerrar sesion (con el inicio de la sesion actual).
-    //   * En cualquier otro caso se conserva lo guardado.
-
     public static void guardarFechas() throws IOException{
         RandomAccessFile f = ManejoArchivos.archivoDatos;
 
@@ -101,8 +97,8 @@ public class ArchivoGuardar {
         f.seek(0);
         f.writeLong(reg);
 
-        Long anterior = ManejoUsuarios.UsuarioActivo.sesionAnterior; 
-        Long actual   = ManejoUsuarios.UsuarioActivo.sesionActual; 
+        Long anterior = ManejoUsuarios.UsuarioActivo.sesionAnterior;
+        Long actual   = ManejoUsuarios.UsuarioActivo.sesionActual;
         long ultimaEnMem = ManejoUsuarios.UsuarioActivo.getUltimaSesion() == null
                             ? 0L : ManejoUsuarios.UsuarioActivo.getUltimaSesion();
 
@@ -126,12 +122,9 @@ public class ArchivoGuardar {
 
     public static void guardarDatosUTF() throws IOException {
         RandomAccessFile f = ManejoArchivos.archivoDatos;
-
-        // Nombre
         f.seek(16);
         f.writeUTF(ManejoUsuarios.UsuarioActivo.getNombre() == null ? "" : ManejoUsuarios.UsuarioActivo.getNombre());
 
-        // "usuario,contrasena,imagen,"
         StringBuilder datos = new StringBuilder();
         String usuario  = ManejoUsuarios.UsuarioActivo.getUsuario();
         String pass     = ManejoUsuarios.UsuarioActivo.getContrasena();
@@ -147,7 +140,6 @@ public class ArchivoGuardar {
         f.writeUTF(datos.toString());
     }
 
-    // ===== PARTIDAS.BIN =====
     public static void guardarPartidas() throws IOException {
         RandomAccessFile f = ManejoArchivos.archivoPartidas;
 
@@ -162,7 +154,6 @@ public class ArchivoGuardar {
 
         for (int i = 0; i < count; i++) {
             Partida p = ManejoUsuarios.UsuarioActivo.historial.get(i);
-
             String fecha    = (p.getFecha()  == null) ? "" : p.getFecha();
             int intentos    = p.getIntentos();
             String logros   = (p.getLogros() == null) ? "" : p.getLogros();
@@ -173,10 +164,7 @@ public class ArchivoGuardar {
             f.writeUTF(logros);
             f.writeInt(tiempo);
         }
-        // f.setLength(f.getFilePointer()); // opcional
     }
-
-    // ===== RENOMBRAR CARPETA USUARIO =====
 
     public static void renombrarCarpetaUsuarioSiCambio() throws IOException {
         if (ManejoUsuarios.UsuarioActivo == null) return;
@@ -187,7 +175,7 @@ public class ArchivoGuardar {
         File currentDir = ManejoArchivos.carpetaUsuarioActual;
         if (currentDir == null) return;
 
-        if (currentDir.getName().equals(newUser)) return; // nada que hacer
+        if (currentDir.getName().equals(newUser)) return;
 
         File parent = ManejoArchivos.carpetaUsuarios;
         if (parent == null) parent = new File("Usuarios");
@@ -198,7 +186,6 @@ public class ArchivoGuardar {
             throw new IOException("Ya existe una carpeta con el usuario: " + newUser);
         }
 
-        // cerrar RAFs
         closeQuietly(ManejoArchivos.archivoDatos);
         closeQuietly(ManejoArchivos.archivoProgreso);
         closeQuietly(ManejoArchivos.archivoPartidas);
@@ -208,14 +195,12 @@ public class ArchivoGuardar {
         ManejoArchivos.archivoPartidas = null;
         ManejoArchivos.archivoConfig = null;
 
-        // renombrar
         boolean ok = currentDir.renameTo(targetDir);
         if (!ok) {
             throw new IOException("No se pudo renombrar la carpeta: " +
                     currentDir.getAbsolutePath() + " -> " + targetDir.getAbsolutePath());
         }
 
-        // reabrir
         ManejoArchivos.carpetaUsuarioActual = targetDir;
         ManejoArchivos.setArchivo(newUser);
     }
@@ -223,8 +208,6 @@ public class ArchivoGuardar {
     private static void closeQuietly(RandomAccessFile raf) {
         if (raf != null) { try { raf.close(); } catch (Exception ignored) {} }
     }
-
-    // ===== AGRUPADORES =====
 
     public static void guardarTodo() throws IOException {
         if (ManejoArchivos.archivoDatos == null ||
@@ -234,7 +217,7 @@ public class ArchivoGuardar {
             throw new IOException("Archivos no listos.");
         }
 
-        guardarTutorialCompletado(); // NUEVO
+        guardarTutorialCompletado();
         guardarNivelesCompletados();
         guardarMayorPuntuacion();
         guardarTiempoTotal();
@@ -242,10 +225,11 @@ public class ArchivoGuardar {
         guardarTotalPartidas();
         guardarPartidasPorNivel();
         guardarTiempoPorNivel();
+        guardarMejorTiempoPorNivel(); // nuevo
 
         guardarConfiguracion();
 
-        guardarFechas();      
+        guardarFechas();
         guardarDatosUTF();
 
         guardarPartidas();
@@ -267,7 +251,6 @@ public class ArchivoGuardar {
         }
 
         renombrarCarpetaUsuarioSiCambio();
-
         guardarTodo();
     }
 }

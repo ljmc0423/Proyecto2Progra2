@@ -8,10 +8,11 @@ import java.util.Calendar;
 
 public class ManejoArchivos {
 
-    // Carpeta base y referencias actuales
     public static File carpetaUsuarios;
     public static File carpetaUsuarioActual;
 
+    
+    
     public static RandomAccessFile archivoDatos;
     public static RandomAccessFile archivoProgreso;
     public static RandomAccessFile archivoPartidas;
@@ -67,14 +68,11 @@ public class ManejoArchivos {
 
         // ===== Datos.bin =====
         archivoDatos = new RandomAccessFile(new File(dir, "Datos.bin"), "rw");
-        // [0] FechaRegistro, [8] UltimaSesion
         archivoDatos.seek(0);
-        archivoDatos.writeLong(ahora);  // fechaRegistro
-        archivoDatos.writeLong(0L);     // ultimaSesion 
-        // [16] Nombre (UTF)
+        archivoDatos.writeLong(ahora);
+        archivoDatos.writeLong(0L);
         archivoDatos.seek(16);
         archivoDatos.writeUTF(nombre == null ? "" : nombre);
-        //  UTF: "usuario,contrasena,imagen,"
         String imgDefecto = "../Imagenes/LogoU.png";
         StringBuilder datos = new StringBuilder();
         datos.append(usuario == null ? "" : usuario).append(',')
@@ -85,37 +83,26 @@ public class ManejoArchivos {
 
         // ===== Progreso.bin =====
         archivoProgreso = new RandomAccessFile(new File(dir, "Progreso.bin"), "rw");
-        // [0] boolean tutorialCompletado
-        archivoProgreso.seek(0); archivoProgreso.writeBoolean(false);
-        // [1..7] boolean[7] niveles completados
-        archivoProgreso.seek(1);
-        for (int i = 0; i < 7; i++) archivoProgreso.writeBoolean(false);
-        // [8] int[7] mayor puntuación
-        archivoProgreso.seek(8);
-        for (int i = 0; i < 7; i++) archivoProgreso.writeInt(0);
-        // [36] int tiempo total
-        archivoProgreso.seek(36); archivoProgreso.writeInt(0);
-        // [40] int puntuación general
-        archivoProgreso.seek(40); archivoProgreso.writeInt(0);
-        // [44] int partidas totales
-        archivoProgreso.seek(44); archivoProgreso.writeInt(0);
-        // [48] int[7] partidas por nivel
-        archivoProgreso.seek(48);
-        for (int i = 0; i < 7; i++) archivoProgreso.writeInt(0);
-        // [102] int[7] tiempo por nivel
-        archivoProgreso.seek(102);
-        for (int i = 0; i < 7; i++) archivoProgreso.writeInt(0);
+        archivoProgreso.seek(0); archivoProgreso.writeBoolean(false); // tuto
+        archivoProgreso.seek(1); for (int i = 0; i < 7; i++) archivoProgreso.writeBoolean(false); // niveles
+        archivoProgreso.seek(8); for (int i = 0; i < 7; i++) archivoProgreso.writeInt(0); // mayorPuntuacion
+        archivoProgreso.seek(36); archivoProgreso.writeInt(0); // tiempoTotal
+        archivoProgreso.seek(40); archivoProgreso.writeInt(0); // puntuacionGeneral
+        archivoProgreso.seek(44); archivoProgreso.writeInt(0); // partidasTotales
+        archivoProgreso.seek(48); for (int i = 0; i < 7; i++) archivoProgreso.writeInt(0); // partidasPorNivel
+        archivoProgreso.seek(102); for (int i = 0; i < 7; i++) archivoProgreso.writeInt(0); // tiempoPorNivel
+        archivoProgreso.seek(130); for (int i = 0; i < 7; i++) archivoProgreso.writeInt(0); // mejorTiempoPorNivel (nuevo)
         archivoProgreso.getFD().sync();
 
         // ===== Config.bin =====
         archivoConfig = new RandomAccessFile(new File(dir, "Config.bin"), "rw");
-        archivoConfig.seek(0);  archivoConfig.writeInt(80); // Volumen
-        archivoConfig.seek(4);  archivoConfig.writeInt(19); // MoverArriba
-        archivoConfig.seek(8);  archivoConfig.writeInt(20); // MoverAbajo
-        archivoConfig.seek(12); archivoConfig.writeInt(22); // MoverDer
-        archivoConfig.seek(16); archivoConfig.writeInt(21); // MoverIzq
-        archivoConfig.seek(20); archivoConfig.writeInt(46); // Reiniciar
-        archivoConfig.seek(24); archivoConfig.writeInt(1);  // Idioma
+        archivoConfig.seek(0);  archivoConfig.writeInt(80);
+        archivoConfig.seek(4);  archivoConfig.writeInt(19);
+        archivoConfig.seek(8);  archivoConfig.writeInt(20);
+        archivoConfig.seek(12); archivoConfig.writeInt(22);
+        archivoConfig.seek(16); archivoConfig.writeInt(21);
+        archivoConfig.seek(20); archivoConfig.writeInt(46);
+        archivoConfig.seek(24); archivoConfig.writeInt(1);
         archivoConfig.getFD().sync();
 
         // ===== Partidas.bin =====
@@ -123,7 +110,6 @@ public class ManejoArchivos {
         archivoPartidas.setLength(0);
         archivoPartidas.getFD().sync();
 
-        // Referencia en memoria
         ManejoUsuarios.UsuarioActivo = new Usuario(usuario, nombre, contrasena, ahora);
         ManejoUsuarios.UsuarioActivo.setUltimaSesion(0L);
         ManejoUsuarios.UsuarioActivo.sesionAnterior = 0L;

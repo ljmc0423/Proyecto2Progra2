@@ -5,207 +5,113 @@ import java.io.RandomAccessFile;
 
 public class LeerArchivo {
 
-    public static void cargarUsuario() throws IOException{
-        if (ManejoUsuarios.UsuarioActivo == null) throw new IOException("UsuarioActivo null.");
-
-        if (ManejoArchivos.archivoDatos == null ||
-            ManejoArchivos.archivoProgreso == null ||
-            ManejoArchivos.archivoPartidas == null ||
-            ManejoArchivos.archivoConfig == null) {
-            throw new IOException("Archivos no listos.");
-        }
-
-        leerUsuario();
-        leerNombre();
-        leerContrasena();
-        leerPartidas();
-        leerAvatar();
-
-        // PROGRESO.BIN (nuevo layout fijo)
-        leerTutorialCompletado();   // [0]
-        leerCompletados();          // [1..7]
-        leerMayorPuntuacion();      // [8]
-        leerTiempoTotal();          // [36]
-        leerPuntuacionGeneral();    // [40]
-        leerPartidasTotales();      // [44]
-        leerPartidasPorNivel();     // [48]
-        leerTiempoPorNivel();       // [102]
-
-        // CONFIG / DATOS
-        leerConfiguracion();
-        leerFechaRegistro();
-        leerUltimaSesion();
+    public static void cargarUsuario() throws IOException {
+        if (ManejoUsuarios.UsuarioActivo == null) return;
+        leerDatos();
+        leerProgreso();
+        leerConfig();
     }
 
-    //  DATOS.BIN 
-    public static void leerUsuario() throws IOException {
+    private static void leerDatos() throws IOException {
         RandomAccessFile f = ManejoArchivos.archivoDatos;
+        if (f == null) return;
+
+        f.seek(0);
+        long fechaRegistro = f.readLong();
+        long ultimaSesion  = f.readLong();
+
         f.seek(16);
-        f.readUTF();               
-        String datos = f.readUTF();
+        String nombre = safeReadUTF(f);
 
-        StringBuilder u = new StringBuilder();
-        for (int i = 0; i < datos.length(); i++) {
-            char c = datos.charAt(i);
-            if (c == ',') break;
-            u.append(c);
-        }
-        ManejoUsuarios.UsuarioActivo.setUsuario(u.toString());
-    }
-
-    public static String leerNombre() throws IOException {
-        RandomAccessFile f = ManejoArchivos.archivoDatos;
-        f.seek(16);
-        String nombre = f.readUTF();
-        ManejoUsuarios.UsuarioActivo.setNombre(nombre);
-        return nombre;
-    }
-
-    public static void leerContrasena() throws IOException {
-        RandomAccessFile f = ManejoArchivos.archivoDatos;
-        f.seek(16);
-        f.readUTF();               
-        String datos = f.readUTF();
-
+        String packed = safeReadUTF(f);
+        String usuario = "";
         String pass = "";
-        int comas = 0;
-        boolean leer = false;
-        for (int i = 0; i < datos.length(); i++) {
-            char c = datos.charAt(i);
-            if (c == ',') {
-                comas++;
-                if (comas == 1) { leer = true; continue; }
-                if (comas == 2) { break; }
-            } else if (leer) pass += c;
-        }
-        ManejoUsuarios.UsuarioActivo.setContrasena(pass);
-    }
-
-    public static void leerAvatar() throws IOException {
-        RandomAccessFile f = ManejoArchivos.archivoDatos;
-        f.seek(16);
-        f.readUTF();                
-        String datos = f.readUTF(); 
-
         String img = "";
-        int comas = 0;
-        boolean leer = false;
-        for (int i = 0; i < datos.length(); i++) {
-            char c = datos.charAt(i);
-            if (c == ',') {
-                comas++;
-                if (comas == 2) { leer = true; continue; }
-                if (comas == 3) { break; }
-            } else if (leer) img += c;
+        if (packed != null) {
+            String[] parts = packed.split(",", -1);
+            if (parts.length > 0) usuario = parts[0];
+            if (parts.length > 1) pass    = parts[1];
+            if (parts.length > 2) img     = parts[2];
         }
-        ManejoUsuarios.UsuarioActivo.setAvatar(img);
+
+        Usuario u = ManejoUsuarios.UsuarioActivo;
+        u.setFechaRegistro(fechaRegistro);
+        u.setUltimaSesion(ultimaSesion);
+        u.setNombre(nombre == null ? "" : nombre);
+        u.setUsuario(usuario == null ? "" : usuario);
+        u.setContrasena(pass == null ? "" : pass);
+        u.avatar = (img == null ? "" : img);
     }
 
-    public static void leerFechaRegistro() throws IOException{
-        RandomAccessFile f = ManejoArchivos.archivoDatos;
-        f.seek(0);
-        ManejoUsuarios.UsuarioActivo.setFechaRegistro(f.readLong());
-    }
-
-    public static void leerUltimaSesion() throws IOException{
-        RandomAccessFile f = ManejoArchivos.archivoDatos;
-        f.seek(8);
-        long t = f.readLong();
-        ManejoUsuarios.UsuarioActivo.setUltimaSesion(t);
-        ManejoUsuarios.UsuarioActivo.sesionAnterior = t;
-    }
-
-    // PARTIDAS.BIN 
-    public static void leerPartidas() throws IOException {
-        RandomAccessFile f = ManejoArchivos.archivoPartidas;
-        long len = f.length();
-        if (len == 0) return; 
-
-        f.seek(0);
-        int count = f.readInt();
-        for (int i = 0; i < count; i++) {
-            String fecha  = f.readUTF();
-            int intentos  = f.readInt();
-            String logros = f.readUTF();
-            int tiempo    = f.readInt();
-
-            try {
-                ManejoUsuarios.UsuarioActivo.historial.add(new Partida(fecha, intentos, logros, tiempo));
-            } catch (Exception ignored) {}
-        }
-    }
-
-    // ===== PROGRESO.BIN =====
-
-    public static void leerTutorialCompletado() throws IOException{
+    private static void leerProgreso() throws IOException {
         RandomAccessFile f = ManejoArchivos.archivoProgreso;
-        f.seek(0);
-        boolean v = f.readBoolean();
-        ManejoUsuarios.UsuarioActivo.setTutocomplete(v);
-    }
+        if (f == null) return;
 
-    public static void leerCompletados() throws IOException{
-        RandomAccessFile f = ManejoArchivos.archivoProgreso;
+        Usuario u = ManejoUsuarios.UsuarioActivo;
+
+        f.seek(0);
+        u.setTutocomplete(f.readBoolean());
+
         f.seek(1);
-        for (int i = 1; i < 8; i++) {
-            ManejoUsuarios.UsuarioActivo.setNivelCompletado(i, f.readBoolean());
+        for (int i = 1; i <= 7; i++) {
+            u.setNivelCompletado(i, f.readBoolean());
         }
-    }
 
-    public static void leerMayorPuntuacion() throws IOException{
-        RandomAccessFile f = ManejoArchivos.archivoProgreso;
         f.seek(8);
-        for (int i = 1; i < 8; i++) {
-            ManejoUsuarios.UsuarioActivo.setMayorPuntuacion(i, f.readInt());
+        for (int i = 1; i <= 7; i++) {
+            u.setMayorPuntuacion(i, f.readInt());
         }
-    }
 
-    public static void leerTiempoTotal() throws IOException{
-        RandomAccessFile f = ManejoArchivos.archivoProgreso;
         f.seek(36);
-        ManejoUsuarios.UsuarioActivo.setTiempoJugadoTotal(f.readInt());
-    }
+        u.setTiempoJugadoTotal(f.readInt());
 
-    public static void leerPuntuacionGeneral() throws IOException{
-        RandomAccessFile f = ManejoArchivos.archivoProgreso;
         f.seek(40);
-        ManejoUsuarios.UsuarioActivo.setPuntuacionGeneral(f.readInt());
-    }
+        u.setPuntuacionGeneral(f.readInt());
 
-    public static void leerPartidasTotales() throws IOException{
-        RandomAccessFile f = ManejoArchivos.archivoProgreso;
         f.seek(44);
-        ManejoUsuarios.UsuarioActivo.setPartidasTotales(f.readInt());
-    }
+        u.setPartidasTotales(f.readInt());
 
-    public static void leerPartidasPorNivel() throws IOException{
-        RandomAccessFile f = ManejoArchivos.archivoProgreso;
         f.seek(48);
-        for (int i = 1; i < 8; i++) {
-            ManejoUsuarios.UsuarioActivo.setPartidasPorNivel(i, f.readInt());
+        for (int i = 1; i <= 7; i++) {
+            u.setPartidasPorNivel(i, f.readInt());
         }
-    }
 
-    public static void leerTiempoPorNivel() throws IOException{
-        RandomAccessFile f = ManejoArchivos.archivoProgreso;
         f.seek(102);
-        for (int i = 1; i < 8; i++) {
-            ManejoUsuarios.UsuarioActivo.setTiempoPorNivel(i, f.readInt());
+        for (int i = 1; i <= 7; i++) {
+            u.setTiempoPorNivel(i, f.readInt());
+        }
+
+        // nuevo bloque
+        f.seek(130);
+        for (int i = 1; i <= 7; i++) {
+            u.setMejorTiempoPorNivel(i, f.readInt());
         }
     }
 
-    // CONFIG.BIN 
-    public static void leerConfiguracion() throws IOException{
+    private static void leerConfig() throws IOException {
         RandomAccessFile f = ManejoArchivos.archivoConfig;
+        if (f == null) return;
 
-        f.seek(0);  ManejoUsuarios.UsuarioActivo.setConfiguracion("Volumen", f.readInt());
+        f.seek(0);
+        int vol       = f.readInt();
+        int arriba    = f.readInt();
+        int abajo     = f.readInt();
+        int der       = f.readInt();
+        int izq       = f.readInt();
+        int reiniciar = f.readInt();
+        int idioma    = f.readInt();
 
-        f.seek(4);  ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverArriba", f.readInt());
-        f.seek(8);  ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverAbajo", f.readInt());
-        f.seek(12); ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverDer", f.readInt());
-        f.seek(16); ManejoUsuarios.UsuarioActivo.setConfiguracion("MoverIzq", f.readInt());
-        f.seek(20); ManejoUsuarios.UsuarioActivo.setConfiguracion("Reiniciar", f.readInt());
+        Usuario u = ManejoUsuarios.UsuarioActivo;
+        u.setConfiguracion("Volumen", vol);
+        u.setConfiguracion("MoverArriba", arriba);
+        u.setConfiguracion("MoverAbajo", abajo);
+        u.setConfiguracion("MoverDer", der);
+        u.setConfiguracion("MoverIzq", izq);
+        u.setConfiguracion("Reiniciar", reiniciar);
+        u.setConfiguracion("Idioma", idioma);
+    }
 
-        f.seek(24); ManejoUsuarios.UsuarioActivo.setConfiguracion("Idioma", f.readInt());
+    private static String safeReadUTF(RandomAccessFile f) {
+        try { return f.readUTF(); } catch (Exception e) { return ""; }
     }
 }

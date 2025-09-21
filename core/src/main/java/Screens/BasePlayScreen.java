@@ -10,7 +10,6 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.badlogic.gdx.audio.Sound;
@@ -23,6 +22,7 @@ import GameLogic.Player;
 import GameLogic.SokobanGame;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
@@ -96,7 +96,11 @@ public abstract class BasePlayScreen implements Screen {
 
     private Texture dimTexture, btnTexture;
 
+    // intento actual (para récords del intento ganador)
     protected float timeChronometer = 0f;
+    // sesión completa del nivel (acumula aunque reinicies)
+    protected float levelSessionTime = 0f;
+    private boolean levelSessionTimeSubmitted = false;
 
     protected int prevPushes;
 
@@ -104,6 +108,9 @@ public abstract class BasePlayScreen implements Screen {
         this.app = app;
         this.level = level;
     }
+
+    // niveles jugables reales (1..7)
+    private boolean isGameplayLevel() { return level >= 1 && level <= 7; }
 
     protected void setPlayer(Player player) {
         this.player = player;
@@ -172,8 +179,7 @@ public abstract class BasePlayScreen implements Screen {
 
         TextButton exitButton = new TextButton("Salir del Juego", buttonStyle);
         exitButton.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent event, float x, float y) {
+            @Override public void clicked(InputEvent event, float x, float y) {
                 app.setScreen(new MenuScreen(app));
             }
         });
@@ -214,33 +220,21 @@ public abstract class BasePlayScreen implements Screen {
         pauseStage.getViewport().update(width, height, true);
     }
 
-    @Override
-    public void pause() {
-    }
-
-    @Override
-    public void resume() {
-    }
+    @Override public void pause() { }
+    @Override public void resume() { }
 
     @Override
     public void hide() {
-        if (bgMusic != null) {
-            bgMusic.stop();
-            AudioBus.unregisterMusic(bgMusic);
-        }
+        // si salimos sin victoria, sumar sesión solo en niveles jugables
+        submitLevelSessionTime();
     }
 
     @Override
     public void dispose() {
         try {
-            if (movementThreadLogic != null) {
-                movementThreadLogic.stop();
-            }
-            if (movementThread != null) {
-                movementThread.interrupt();
-            }
-        } catch (Exception ignored) {
-        }
+            if (movementThreadLogic != null) movementThreadLogic.stop();
+            if (movementThread != null) movementThread.interrupt();
+        } catch (Exception ignored) { }
         pauseStage.dispose();
         onDisposeExtra();
         batch.dispose();
@@ -248,11 +242,8 @@ public abstract class BasePlayScreen implements Screen {
     }
 
     protected abstract void onShowExtra();
-
     protected abstract void onDrawMap();
-
     protected abstract void onDrawHUD();
-
     protected abstract void onDisposeExtra();
 
     protected void onUpdate(float delta) {
@@ -263,28 +254,24 @@ public abstract class BasePlayScreen implements Screen {
             if (paused) {
                 directionQueue.clear();
                 pauseRoot.setVisible(true);
-                if (bgMusic != null) {
-                    bgMusic.pause();
-                }
+                if (bgMusic != null) bgMusic.pause();
                 input.setInputProcessor(pauseStage);
             } else {
                 pauseRoot.setVisible(false);
-                if (bgMusic != null) {
-                    bgMusic.play();
-                }
+                if (bgMusic != null) bgMusic.play();
                 input.setInputProcessor(null);
             }
         }
 
-        if (paused) {
-            return;
-        }
+        if (paused) return;
 
+        // intento (récords) — este puede correr siempre sin afectar acumulados
         timeChronometer += delta;
 
-        if (!tweenActive) {
-            handleHeldInput(delta);
-        }
+        // sesión acumulada SOLO en niveles 1..7
+        if (isGameplayLevel()) levelSessionTime += delta;
+
+        if (!tweenActive) handleHeldInput(delta);
 
         detectAndAnimateMovement();
 
@@ -297,9 +284,7 @@ public abstract class BasePlayScreen implements Screen {
     }
 
     private void handleHeldInput(float delta) {
-        if (tweenActive || moveRequested) {
-            return;
-        }
+        if (tweenActive || moveRequested) return;
 
         Directions currentHeld = readHeldDirection();
         if (currentHeld == null) {
@@ -328,12 +313,8 @@ public abstract class BasePlayScreen implements Screen {
     }
 
     private void enqueueDirection(Directions dir) {
-        if (tweenActive || moveRequested) {
-            return;
-        }
-        if (directionQueue.offer(dir)) {
-            moveRequested = true;
-        }
+        if (tweenActive || moveRequested) return;
+        if (directionQueue.offer(dir)) moveRequested = true;
     }
 
     private void detectAndAnimateMovement() {
@@ -368,20 +349,32 @@ public abstract class BasePlayScreen implements Screen {
 
             game.recomputeVictory();
             if (game.isVictory()) {
-                if (bgMusic != null) {
-                    bgMusic.stop();
-                }
+                if (bgMusic != null) bgMusic.stop();
+
                 int totalSec = (int) timeChronometer;
                 int moves = p.getMoveCount();
                 int pushes = p.getPushCount();
-                if (level == 0) {
-                    try {
+
+                try {
+                    if (level == 0) {
                         if (ManejoUsuarios.UsuarioActivo != null) {
                             ManejoUsuarios.UsuarioActivo.setTutocomplete(true);
                         }
-                    } catch (Exception ignored) {
+                    } else if (isGameplayLevel()) {
+                        Usuario u = ManejoUsuarios.UsuarioActivo;
+                        if (u != null) {
+                            u.setNivelCompletado(level, true);
+                            int bestSteps = u.getMayorPuntuacion(level);
+                            if (bestSteps == 0 || moves < bestSteps) u.setMayorPuntuacion(level, moves);
+                            int bestTime = u.getMejorTiempoPorNivel(level);
+                            if (bestTime == 0 || totalSec < bestTime) u.setMejorTiempoPorNivel(level, totalSec);
+                        }
                     }
-                }
+                } catch (Exception ignored) {}
+
+                // suma de sesión solo si es gameplay
+                submitLevelSessionTime();
+
                 app.setScreen(new VictoryScreen(app, level, moves, pushes, totalSec, 7, 0, font));
                 return;
             }
@@ -391,6 +384,38 @@ public abstract class BasePlayScreen implements Screen {
             prevPushes = p.getPushCount();
             moveRequested = false;
         }
+    }
+
+    private void submitLevelSessionTime() {
+        // nada que sumar si no es nivel jugable (evita sumar en elevador/animación nivel 9)
+        if (!isGameplayLevel()) {
+            levelSessionTime = 0f;
+            levelSessionTimeSubmitted = true;
+            return;
+        }
+        if (levelSessionTimeSubmitted) return;
+
+        try {
+            Usuario u = ManejoUsuarios.UsuarioActivo;
+            if (u != null) {
+                int secs = (int) levelSessionTime;
+
+                u.setTiempoJugadoTotal(u.getTiempoJugadoTotal() + secs);
+
+                int acumNivel = u.getTiempoPorNivel(level);
+                u.setTiempoPorNivel(level, acumNivel + secs);
+
+                int partidasNivel = u.getPartidasPorNivel(level);
+                u.setPartidasPorNivel(level, partidasNivel + 1);
+
+                u.setPartidasTotales(u.getPartidasTotales() + 1);
+
+                u.recalcularTiempoPromedioNivel(level);
+            }
+        } catch (Exception ignored) { }
+
+        levelSessionTime = 0f;
+        levelSessionTimeSubmitted = true;
     }
 
     protected void loadCommonAssets() {
@@ -456,18 +481,10 @@ public abstract class BasePlayScreen implements Screen {
         wallTexture.dispose();
         btnTexture.dispose();
 
-        for (Texture t : downFrames) {
-            t.dispose();
-        }
-        for (Texture t : upFrames) {
-            t.dispose();
-        }
-        for (Texture t : leftFrames) {
-            t.dispose();
-        }
-        for (Texture t : rightFrames) {
-            t.dispose();
-        }
+        for (Texture t : downFrames) t.dispose();
+        for (Texture t : upFrames) t.dispose();
+        for (Texture t : leftFrames) t.dispose();
+        for (Texture t : rightFrames) t.dispose();
 
         stepSound.dispose();
         resetLevelSound.dispose();
@@ -485,12 +502,9 @@ public abstract class BasePlayScreen implements Screen {
             Usuario usuario = com.elkinedwin.LogicaUsuario.ManejoUsuarios.UsuarioActivo;
             if (usuario != null && usuario.configuracion != null) {
                 Integer v = usuario.configuracion.get(name);
-                if (v != null && v != 0) {
-                    return v;
-                }
+                if (v != null && v != 0) return v;
             }
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) { }
         return def;
     }
 
@@ -500,18 +514,10 @@ public abstract class BasePlayScreen implements Screen {
         kLeft = getCfgKey("MoverIzq", LEFT);
         kRight = getCfgKey("MoverDer", RIGHT);
 
-        if (input.isKeyPressed(kUp)) {
-            return Directions.UP;
-        }
-        if (input.isKeyPressed(kDown)) {
-            return Directions.DOWN;
-        }
-        if (input.isKeyPressed(kLeft)) {
-            return Directions.LEFT;
-        }
-        if (input.isKeyPressed(kRight)) {
-            return Directions.RIGHT;
-        }
+        if (input.isKeyPressed(kUp)) return Directions.UP;
+        if (input.isKeyPressed(kDown)) return Directions.DOWN;
+        if (input.isKeyPressed(kLeft)) return Directions.LEFT;
+        if (input.isKeyPressed(kRight)) return Directions.RIGHT;
         return null;
     }
 
@@ -529,9 +535,7 @@ public abstract class BasePlayScreen implements Screen {
     }
 
     protected void advanceTween(float delta) {
-        if (!tweenActive) {
-            return;
-        }
+        if (!tweenActive) return;
 
         tweenTime += delta;
         float t = tweenTime / tweenDuration;
@@ -553,29 +557,16 @@ public abstract class BasePlayScreen implements Screen {
     protected Texture pickFrameForFacing() {
         Texture arr[];
         switch (facing) {
-            case UP:
-                arr = upFrames;
-                break;
-            case DOWN:
-                arr = downFrames;
-                break;
-            case LEFT:
-                arr = leftFrames;
-                break;
-            case RIGHT:
-                arr = rightFrames;
-                break;
-            default:
-                arr = downFrames;
+            case UP:    arr = upFrames;    break;
+            case DOWN:  arr = downFrames;  break;
+            case LEFT:  arr = leftFrames;  break;
+            case RIGHT: arr = rightFrames; break;
+            default:    arr = downFrames;
         }
-        if (!tweenActive) {
-            return arr[1];
-        }
+        if (!tweenActive) return arr[1];
         float t = tweenTime / tweenDuration;
         int idx = (int) (t * 3.0f);
-        if (idx > 2) {
-            idx = 2;
-        }
+        if (idx > 2) idx = 2;
         return arr[idx];
     }
 }

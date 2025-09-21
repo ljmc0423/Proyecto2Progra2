@@ -38,9 +38,7 @@ public class MenuScreen extends BaseScreen {
     private Texture avatarTex;
     private Image avatarImg;
 
-    public MenuScreen(Game game) {
-        this.game = game;
-    }
+    public MenuScreen(Game game) { this.game = game; }
 
     @Override
     protected void onShow() {
@@ -76,40 +74,35 @@ public class MenuScreen extends BaseScreen {
                     if (ManejoUsuarios.UsuarioActivo != null) {
                         tutoHecho = ManejoUsuarios.UsuarioActivo.getTutocomplete();
                     }
-                } catch (Exception ignored) {
-                }
+                } catch (Exception ignored) {}
                 if (!tutoHecho) {
                     game.setScreen(new TutorialScreen(game));
                 } else {
+                    // Lógica “avanzada”: ir al hub/selector de niveles
                     game.setScreen(new StageScreen(game));
+                    // Si prefieres arrancar en el nivel 1, usa:
+                    // game.setScreen(new GameScreen(game, 1));
                 }
             }
         });
 
         btnLevels.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent e, float x, float y) {
+            @Override public void clicked(InputEvent e, float x, float y) {
                 game.setScreen(new TutorialScreen(game));
             }
         });
         btnConfig.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent e, float x, float y) {
+            @Override public void clicked(InputEvent e, float x, float y) {
                 game.setScreen(new ConfigScreen(game));
             }
         });
         btnUniverso.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent e, float x, float y) {
-            }
+            @Override public void clicked(InputEvent e, float x, float y) { }
         });
         btnExit.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent e, float x, float y) {
-                try {
-                    ArchivoGuardar.guardarTodoCerrarSesion();
-                } catch (IOException ignored) {
-                } finally {
+            @Override public void clicked(InputEvent e, float x, float y) {
+                try { ArchivoGuardar.guardarTodoCerrarSesion(); } catch (IOException ignored) {}
+                finally {
                     ManejoUsuarios.UsuarioActivo = null;
                     game.setScreen(new LoginScreen(game));
                 }
@@ -132,12 +125,9 @@ public class MenuScreen extends BaseScreen {
         try {
             if (ManejoUsuarios.UsuarioActivo != null && ManejoUsuarios.UsuarioActivo.configuracion != null) {
                 Integer v = ManejoUsuarios.UsuarioActivo.configuracion.get("Volumen");
-                if (v != null) {
-                    volCfg = v;
-                }
+                if (v != null) volCfg = v;
             }
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
         AudioBus.setMasterVolume(volCfg / 100f);
 
         bgMusic = AudioX.newMusic("audios/menu_bg_song.mp3");
@@ -159,8 +149,7 @@ public class MenuScreen extends BaseScreen {
         avatarTex = new Texture(avatarPath);
         avatarImg = new Image(avatarTex);
         avatarImg.addListener(new ClickListener() {
-            @Override
-            public void clicked(InputEvent e, float x, float y) {
+            @Override public void clicked(InputEvent e, float x, float y) {
                 game.setScreen(new MiPerfilScreen(game));
             }
         });
@@ -177,16 +166,12 @@ public class MenuScreen extends BaseScreen {
     public void hide() {
         if (bgMusic != null) {
             bgMusic.stop();
-            com.elkinedwin.LogicaUsuario.AudioBus.unregisterMusic(bgMusic);
+            AudioBus.unregisterMusic(bgMusic);
             bgMusic.dispose();
             bgMusic = null;
         }
-        if (avatarTex != null) {
-            avatarTex.dispose();
-            avatarTex = null;
-        }
+        if (avatarTex != null) { avatarTex.dispose(); avatarTex = null; }
         super.hide();
-
     }
 
     @Override

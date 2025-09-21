@@ -10,8 +10,7 @@ import com.badlogic.gdx.graphics.Texture;
 import GameLogic.GameConfig;
 import GameLogic.MovementThread;
 import GameLogic.TileMap;
-import com.badlogic.gdx.Input.Keys;
-   // <-- importa AudioX
+
 import com.elkinedwin.LogicaUsuario.AudioX;
 
 public final class GameScreen extends BasePlayScreen {
