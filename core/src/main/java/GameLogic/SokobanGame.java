@@ -42,7 +42,7 @@ public final class SokobanGame extends Game {
         for (int y = 0; y < GameConfig.ROWS; y++) {
             for (int x = 0; x < GameConfig.COLS; x++) {
                 if (map.getTile(x, y) == TileMap.BOX || map.getTile(x, y) == TileMap.ELEVATOR
-                        || map.getTile(x, y) == TileMap.CARPET) {
+                        || map.getTile(x, y) == TileMap.ELEVATOR_BUTTONS) {
                     return false;
                 }
             }

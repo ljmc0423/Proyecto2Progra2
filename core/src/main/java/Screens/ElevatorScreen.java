@@ -8,17 +8,25 @@ import static com.badlogic.gdx.Gdx.input;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.audio.Sound;
 
 public final class ElevatorScreen extends BasePlayScreen {
 
-    private Texture elevatorFloor, elevatorButtons, elevatorWall, carpet, blackTexture;
+    private Texture elevatorFloor, elevatorButtons, elevatorWall, blackTexture;
     private Pixmap pixmap;
 
     private boolean nearButtons = false;
     private boolean selecting = false;
     private boolean ignoreEnter = false;
     private int selectedIndex = 0;
-    private final int[] levelList = {1, 2, 3, 4, 5, 6, 7};
+    private final int levelList[] = {1, 2, 3, 4, 5, 6, 7};
+
+    // transición
+    private boolean transitioning = false;
+    private float transitionTime = 0f;
+    private int pendingLevel = -1;
+    private Sound sMoving, sFinished;
+    private boolean movingPlayed = false;
 
     public ElevatorScreen(Game app) {
         super(app, 9);
@@ -27,7 +35,6 @@ public final class ElevatorScreen extends BasePlayScreen {
     @Override
     protected void onShowExtra() {
         prevPushes = game.getPlayer().getPushCount();
-        carpet = load("textures/carpet.png");
         elevatorFloor = load("textures/elevator_floor.png");
         elevatorWall = load("textures/elevator_wall.png");
         elevatorButtons = load("textures/elevator_buttons.png");
@@ -36,10 +43,45 @@ public final class ElevatorScreen extends BasePlayScreen {
         pixmap.setColor(0, 0, 0, 1);
         pixmap.fill();
         blackTexture = new Texture(pixmap);
+
+        // sonidos de transición
+        sMoving = com.elkinedwin.LogicaUsuario.AudioX.newSound("audios/elevator_moving.wav");
+        sFinished = com.elkinedwin.LogicaUsuario.AudioX.newSound("audios/elevator_finished.wav");
     }
 
     @Override
     protected void onUpdate(float delta) {
+        // si estamos en transición, solo temporizamos
+        if (transitioning) {
+            if (!movingPlayed) {
+                movingPlayed = true;
+                sMoving.play(1f);
+                if (bgMusic != null) {
+                    bgMusic.pause();
+                }
+                directionQueue.clear();
+                heldDirection = null;
+                moveRequested = false;
+                tweenActive = false;
+            }
+            transitionTime += delta;
+            if (transitioning && pendingLevel >= 0) {
+                transitionTime += delta;
+
+                if (transitionTime >= 5.0f && transitionTime < 5.1f) {
+                    sMoving.stop();
+                    sFinished.play(1f);
+                }
+                if (transitionTime >= 9f) {
+                    app.setScreen(new GameScreen(app, pendingLevel));
+                    return;
+                }
+                return;
+            }
+
+            return;
+        }
+
         if (selecting && input.isKeyJustPressed(Keys.ESCAPE)) {
             selecting = false;
             return;
@@ -87,8 +129,11 @@ public final class ElevatorScreen extends BasePlayScreen {
             } else if (input.isKeyJustPressed(Keys.DOWN)) {
                 selectedIndex = (selectedIndex + 1) % levelList.length;
             } else if (input.isKeyJustPressed(Keys.ENTER)) {
-                int levelId = levelList[selectedIndex];
-                app.setScreen(new GameScreen(app, levelId));
+                pendingLevel = levelList[selectedIndex];
+                selecting = false;
+                transitioning = true;
+                transitionTime = 0f;
+                movingPlayed = false;
                 return;
             }
         }
@@ -96,7 +141,7 @@ public final class ElevatorScreen extends BasePlayScreen {
 
     @Override
     protected GameLogic.Directions readHeldDirection() {
-        if (selecting) {
+        if (selecting || transitioning) {
             return null;
         }
         return super.readHeldDirection();
@@ -106,6 +151,7 @@ public final class ElevatorScreen extends BasePlayScreen {
     protected void onDrawMap() {
         TileMap map = game.getMap();
 
+        // fondo
         for (int row = 0; row < GameConfig.ROWS; row++) {
             for (int col = 0; col < GameConfig.COLS; col++) {
                 int dx = col * GameConfig.TILE_SIZE;
@@ -116,8 +162,6 @@ public final class ElevatorScreen extends BasePlayScreen {
                 char ch = map.getTile(col, row);
                 if (ch == TileMap.WALL) {
                     batch.draw(wallTexture, dx, dy, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
-                } else if (ch == TileMap.CARPET) {
-                    batch.draw(carpet, dx, dy, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
                 } else if (ch == TileMap.BLACK) {
                     batch.draw(blackTexture, dx, dy, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
                 }
@@ -149,38 +193,45 @@ public final class ElevatorScreen extends BasePlayScreen {
 
     @Override
     protected void onDrawHUD() {
-        if (nearButtons && !selecting) {
-            float tx = 10f;
-            float ty = 12f;
-            font.draw(batch, "ENTER: Seleccionar nivel", tx, ty);
-        }
-
-        if (selecting) {
-            batch.setColor(1f, 1f, 1f, 0.6f);
-            batch.draw(blackTexture, 0, 0, GameConfig.PX_WIDTH, GameConfig.PX_HEIGHT);
-            batch.setColor(1f, 1f, 1f, 1f);
-
-            float panelX = GameConfig.PX_WIDTH * 0.5f - 140f;
-            float panelY = GameConfig.PX_HEIGHT * 0.5f + 100f;
-
-            font.draw(batch, "Selecciona nivel (ESC para salir)", panelX, panelY);
-
-            float y = panelY - 24f;
-            for (int i = 0; i < levelList.length; i++) {
-                String prefix = (i == selectedIndex) ? ">" : " ";
-                font.draw(batch, prefix + " Nivel " + levelList[i], panelX, y);
-                y -= 20f;
+        if (!transitioning) {
+            if (nearButtons && !selecting) {
+                font.draw(batch, "ENTER: Seleccionar nivel", 10f, 52f);
             }
+            if (selecting) {
+                batch.setColor(1f, 1f, 1f, 0.6f);
+                batch.draw(blackTexture, 0, 0, GameConfig.PX_WIDTH, GameConfig.PX_HEIGHT);
+                batch.setColor(1f, 1f, 1f, 1f);
+
+                float panelX = GameConfig.PX_WIDTH * 0.5f - 140f;
+                float panelY = GameConfig.PX_HEIGHT * 0.5f + 100f;
+
+                font.draw(batch, "Selecciona nivel (ESC para salir)", panelX, panelY);
+
+                float y = panelY - 24f;
+                for (int i = 0; i < levelList.length; i++) {
+                    String prefix = (i == selectedIndex) ? ">" : " ";
+                    font.draw(batch, prefix + " Nivel " + levelList[i], panelX, y);
+                    y -= 20f;
+                }
+            }
+        } else {
+            batch.setColor(1f, 1f, 1f, 1f);
+            batch.draw(blackTexture, 0, 0, GameConfig.PX_WIDTH, GameConfig.PX_HEIGHT);
         }
     }
 
     @Override
     protected void onDisposeExtra() {
-        carpet.dispose();
         elevatorFloor.dispose();
         elevatorWall.dispose();
         elevatorButtons.dispose();
         blackTexture.dispose();
         pixmap.dispose();
+        if (sMoving != null) {
+            sMoving.dispose();
+        }
+        if (sFinished != null) {
+            sFinished.dispose();
+        }
     }
 }

@@ -7,12 +7,17 @@ import GameLogic.TileMap;
 import GameLogic.Elevator;
 import GameLogic.Directions;
 import GameLogic.Phase;
+import com.badlogic.gdx.audio.Sound;
+import com.elkinedwin.LogicaUsuario.AudioX;
 
 public final class StageScreen extends BasePlayScreen {
 
     private Texture carpet;
     private Texture[] elevatorFrames;
     private Elevator elevator;
+
+    private Sound elevatorAnimSound;
+    private long elevatorSoundId = -1;
 
     private final int elevatorX = 16, elevatorY = 12;
 
@@ -22,7 +27,9 @@ public final class StageScreen extends BasePlayScreen {
     private float hiddenPlayerRatio = -1f;
     private static final float CLOSE_SPEED = 5.0f;
 
-    public StageScreen(Game app) { super(app, 8); }
+    public StageScreen(Game app) {
+        super(app, 8);
+    }
 
     @Override
     protected void onShowExtra() {
@@ -36,17 +43,36 @@ public final class StageScreen extends BasePlayScreen {
         Texture f3 = load("textures/elevator_3.png");
         elevatorFrames = new Texture[]{f0, f1, f2, f3};
 
+        elevatorAnimSound = AudioX.newSound("audios/opening_closing_elevator.wav");
+
         elevator = new Elevator(elevatorX, elevatorY);
+    }
+
+    private void handleElevatorSound(Elevator.State state) {
+        boolean moving = (state == Elevator.State.OPENING || state == Elevator.State.CLOSING);
+        if (moving) {
+            if (elevatorSoundId == -1) {
+                elevatorSoundId = elevatorAnimSound.loop(1f);
+            }
+        } else {
+            if (elevatorSoundId != -1) {
+                elevatorAnimSound.stop(elevatorSoundId);
+                elevatorSoundId = -1;
+            }
+        }
     }
 
     @Override
     protected void onUpdate(float delta) {
         super.onUpdate(delta);
-        if (paused) return;
+        if (paused) {
+            return;
+        }
 
         switch (phase) {
             case NONE: {
                 elevator.update(delta, game.getPlayer());
+                handleElevatorSound(elevator.getState());
                 boolean standing = !tweenActive && !moveRequested;
                 if (standing && game.getPlayer().getX() == elevatorX && game.getPlayer().getY() == elevatorY) {
                     directionQueue.clear();
@@ -57,9 +83,12 @@ public final class StageScreen extends BasePlayScreen {
                     drawPX = elevatorX * GameConfig.TILE_SIZE;
                     drawPY = elevatorY * GameConfig.TILE_SIZE;
 
-                    if (bgMusic != null) bgMusic.stop();
+                    if (bgMusic != null) {
+                        bgMusic.stop();
+                    }
 
                     elevator.forceOpen();
+                    handleElevatorSound(Elevator.State.OPEN);
                     phase = Phase.WAIT_OPEN;
                     phaseTime = 0f;
                 }
@@ -68,9 +97,12 @@ public final class StageScreen extends BasePlayScreen {
             case WAIT_OPEN: {
                 phaseTime += delta;
                 if (phaseTime >= 1.0f) {
-                    if (hiddenPlayerRatio < 0f) hiddenPlayerRatio = playerRatio;
+                    if (hiddenPlayerRatio < 0f) {
+                        hiddenPlayerRatio = playerRatio;
+                    }
                     playerRatio = 0f;
                     elevator.beginClosing();
+                    handleElevatorSound(Elevator.State.CLOSING);
                     phase = Phase.CLOSING;
                     phaseTime = 0f;
                 }
@@ -78,8 +110,10 @@ public final class StageScreen extends BasePlayScreen {
             }
             case CLOSING: {
                 elevator.update(delta * CLOSE_SPEED, game.getPlayer());
+                handleElevatorSound(elevator.getState());
                 boolean closed = elevator.getState() == Elevator.State.CLOSED && elevator.getProgress() == 0f;
                 if (closed) {
+                    handleElevatorSound(Elevator.State.CLOSED);
                     phase = Phase.POST_CLOSE;
                     phaseTime = 0f;
                 }
@@ -98,7 +132,9 @@ public final class StageScreen extends BasePlayScreen {
 
     @Override
     protected Directions readHeldDirection() {
-        if (phase != Phase.NONE) return null;
+        if (phase != Phase.NONE) {
+            return null;
+        }
         return super.readHeldDirection();
     }
 
@@ -123,7 +159,7 @@ public final class StageScreen extends BasePlayScreen {
         }
 
         int fi = Math.max(0, Math.min(Math.round(elevator.getProgress() * (elevatorFrames.length - 1)),
-                                      elevatorFrames.length - 1));
+                elevatorFrames.length - 1));
         int texW = elevatorFrames[0].getWidth();
         int texH = elevatorFrames[0].getHeight();
 
@@ -141,12 +177,23 @@ public final class StageScreen extends BasePlayScreen {
         batch.draw(elevatorFrames[fi], drawX, drawY, drawW, drawH);
     }
 
-    @Override protected void onDrawHUD() {}
+    @Override
+    protected void onDrawHUD() {
+    }
 
     @Override
     protected void onDisposeExtra() {
         carpet.dispose();
-        for (Texture t : elevatorFrames) t.dispose();
-        if (hiddenPlayerRatio >= 0f) playerRatio = hiddenPlayerRatio;
+        for (Texture t : elevatorFrames) {
+            t.dispose();
+        }
+        if (hiddenPlayerRatio >= 0f) {
+            playerRatio = hiddenPlayerRatio;
+        }
+
+        elevatorAnimSound.stop(elevatorSoundId);
+        elevatorSoundId = -1;
+        
+        elevatorAnimSound.dispose();
     }
 }
