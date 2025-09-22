@@ -10,6 +10,7 @@ public class LeerArchivo {
         leerDatos();
         leerProgreso();
         leerConfig();
+        leerPartidas(); // NUEVO: cargar historial de partidas
     }
 
     private static void leerDatos() throws IOException {
@@ -109,6 +110,32 @@ public class LeerArchivo {
         u.setConfiguracion("MoverIzq", izq);
         u.setConfiguracion("Reiniciar", reiniciar);
         u.setConfiguracion("Idioma", idioma);
+    }
+
+    // === NUEVO: leer historial de partidas desde Partidas.bin ===
+    private static void leerPartidas() throws IOException {
+        RandomAccessFile f = ManejoArchivos.archivoPartidas;
+        if (f == null) return;
+
+        Usuario u = ManejoUsuarios.UsuarioActivo;
+        if (u.historial != null) {
+            u.historial.clear();
+        }
+
+        if (f.length() == 0) return;
+
+        f.seek(0);
+        int count = f.readInt();
+        for (int i = 0; i < count; i++) {
+            String fecha  = safeReadUTF(f);
+            int intentos  = f.readInt();
+            String logros = safeReadUTF(f);
+            int tiempo    = f.readInt();
+            int nivel     = f.readInt(); // NUEVO
+
+            Partida p = new Partida(fecha, intentos, logros, tiempo, nivel);
+            u.historial.add(p);
+        }
     }
 
     private static String safeReadUTF(RandomAccessFile f) {

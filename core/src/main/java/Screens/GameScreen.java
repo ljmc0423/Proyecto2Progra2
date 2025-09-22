@@ -48,6 +48,10 @@ public final class GameScreen extends BasePlayScreen {
         // antes: resetLevelSound.play(1.0f);
         AudioX.play(resetLevelSound, 1.0f);
 
+        // >>>> ÚNICO CAMBIO PARA CONTAR INTENTOS <<<<
+        notifyRestart();
+        // <<<< --------------------------------- >>>>
+
         try {
             if (movementThreadLogic != null) movementThreadLogic.stop();
             if (movementThread != null) movementThread.interrupt();

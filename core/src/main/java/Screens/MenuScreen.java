@@ -28,6 +28,8 @@ public class MenuScreen extends BaseScreen {
 
     private Label lblTitle;
     private TextButton btnPlay, btnLevels, btnConfig, btnUniverso, btnExit;
+    // NUEVO
+    private TextButton btnHistorial;
 
     private BitmapFont titleFont, buttonFont;
     private FreeTypeFontGenerator generator;
@@ -63,6 +65,8 @@ public class MenuScreen extends BaseScreen {
         btnPlay = new TextButton("Jugar", btnStyle);
         btnLevels = new TextButton("Tutorial", btnStyle);
         btnConfig = new TextButton("Configuraciones", btnStyle);
+        // NUEVO botón de historial
+        btnHistorial = new TextButton("Historial de Partidas", btnStyle);
         btnUniverso = new TextButton("Universo Sokoban", btnStyle);
         btnExit = new TextButton("Cerrar Sesion", btnStyle);
 
@@ -96,6 +100,12 @@ public class MenuScreen extends BaseScreen {
                 game.setScreen(new ConfigScreen(game));
             }
         });
+        // NUEVO listener
+        btnHistorial.addListener(new ClickListener() {
+            @Override public void clicked(InputEvent e, float x, float y) {
+                game.setScreen(new HistorialScreen(game));
+            }
+        });
         btnUniverso.addListener(new ClickListener() {
             @Override public void clicked(InputEvent e, float x, float y) { }
         });
@@ -118,6 +128,8 @@ public class MenuScreen extends BaseScreen {
         root.add(btnPlay).row();
         root.add(btnLevels).row();
         root.add(btnConfig).row();
+        // NUEVO botón en el menú
+        root.add(btnHistorial).row();
         root.add(btnUniverso).row();
         root.add(btnExit).padTop(36f).row();
 
@@ -166,7 +178,7 @@ public class MenuScreen extends BaseScreen {
     public void hide() {
         if (bgMusic != null) {
             bgMusic.stop();
-            AudioBus.unregisterMusic(bgMusic);
+            com.elkinedwin.LogicaUsuario.AudioBus.unregisterMusic(bgMusic);
             bgMusic.dispose();
             bgMusic = null;
         }

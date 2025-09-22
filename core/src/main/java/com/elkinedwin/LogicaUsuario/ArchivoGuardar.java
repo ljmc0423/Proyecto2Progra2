@@ -158,11 +158,13 @@ public class ArchivoGuardar {
             int intentos    = p.getIntentos();
             String logros   = (p.getLogros() == null) ? "" : p.getLogros();
             int tiempo      = p.getTiempo();
+            int nivel       = p.getNivel(); // NUEVO
 
             f.writeUTF(fecha);
             f.writeInt(intentos);
             f.writeUTF(logros);
             f.writeInt(tiempo);
+            f.writeInt(nivel); // NUEVO
         }
     }
 

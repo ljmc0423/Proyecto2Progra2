@@ -42,6 +42,11 @@ import com.elkinedwin.LogicaUsuario.AudioBus;
 import com.elkinedwin.LogicaUsuario.AudioX;
 import com.elkinedwin.LogicaUsuario.ManejoUsuarios;
 
+// historial
+import com.elkinedwin.LogicaUsuario.Partida;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 public abstract class BasePlayScreen implements Screen {
 
     protected final Game app;
@@ -103,6 +108,12 @@ public abstract class BasePlayScreen implements Screen {
     private boolean levelSessionTimeSubmitted = false;
 
     protected int prevPushes;
+
+    // === Campos Historial ===
+    private long runStartMillis = 0L;
+    private String startDateStr = null;   // yyyy/MM/dd HH-mm-ss
+    private int restartCount = 0;         // arranca en 1
+    private boolean historyRecorded = false;
 
     public BasePlayScreen(Game app, int level) {
         this.app = app;
@@ -190,6 +201,12 @@ public abstract class BasePlayScreen implements Screen {
         pauseStage.addActor(pauseRoot);
         pauseRoot.setVisible(false);
 
+        // === Inicializar historial ===
+        historyRecorded = false;
+        runStartMillis = System.currentTimeMillis();
+        startDateStr = formatDate(runStartMillis); // yyyy/MM/dd HH-mm-ss
+        restartCount = 1; // <-- primer intento cuenta como 1
+
         onShowExtra();
     }
 
@@ -227,6 +244,14 @@ public abstract class BasePlayScreen implements Screen {
     public void hide() {
         // si salimos sin victoria, sumar sesión solo en niveles jugables
         submitLevelSessionTime();
+
+        // registrar como intento sin victoria si aplica
+        if (isGameplayLevel() && !historyRecorded) {
+            int elapsedSec = (int) ((System.currentTimeMillis() - runStartMillis) / 1000L);
+            String logros = "Buen intento, ¡sigue mejorando!";
+            savePartida(startDateStr, restartCount, logros, elapsedSec, level);
+            historyRecorded = true;
+        }
     }
 
     @Override
@@ -265,7 +290,7 @@ public abstract class BasePlayScreen implements Screen {
 
         if (paused) return;
 
-        // intento (récords) — este puede correr siempre sin afectar acumulados
+        // intento (récords)
         timeChronometer += delta;
 
         // sesión acumulada SOLO en niveles 1..7
@@ -355,6 +380,9 @@ public abstract class BasePlayScreen implements Screen {
                 int moves = p.getMoveCount();
                 int pushes = p.getPushCount();
 
+                boolean newBestSteps = false;
+                boolean newBestTime  = false;
+
                 try {
                     if (level == 0) {
                         if (ManejoUsuarios.UsuarioActivo != null) {
@@ -363,16 +391,30 @@ public abstract class BasePlayScreen implements Screen {
                     } else if (isGameplayLevel()) {
                         Usuario u = ManejoUsuarios.UsuarioActivo;
                         if (u != null) {
-                            u.setNivelCompletado(level, true);
                             int bestSteps = u.getMayorPuntuacion(level);
-                            if (bestSteps == 0 || moves < bestSteps) u.setMayorPuntuacion(level, moves);
+                            if (bestSteps == 0 || moves < bestSteps) newBestSteps = true;
+
                             int bestTime = u.getMejorTiempoPorNivel(level);
-                            if (bestTime == 0 || totalSec < bestTime) u.setMejorTiempoPorNivel(level, totalSec);
+                            if (bestTime == 0 || totalSec < bestTime) newBestTime = true;
+
+                            u.setNivelCompletado(level, true);
+                            if (newBestSteps) u.setMayorPuntuacion(level, moves);
+                            if (newBestTime)  u.setMejorTiempoPorNivel(level, totalSec);
                         }
                     }
                 } catch (Exception ignored) {}
 
-                // suma de sesión solo si es gameplay
+                // registrar partida ganada
+                if (isGameplayLevel() && !historyRecorded) {
+                    int elapsedSecReal = (int) ((System.currentTimeMillis() - runStartMillis) / 1000L);
+                    StringBuilder lg = new StringBuilder("Haz completado el nivel");
+                    if (newBestSteps) lg.append("\nNuevo récord de pasos");
+                    if (newBestTime)  lg.append("\nNuevo récord de tiempo");
+                    savePartida(startDateStr, restartCount, lg.toString(), elapsedSecReal, level);
+                    historyRecorded = true;
+                }
+
+                // suma de sesión
                 submitLevelSessionTime();
 
                 app.setScreen(new VictoryScreen(app, level, moves, pushes, totalSec, 7, font));
@@ -387,7 +429,6 @@ public abstract class BasePlayScreen implements Screen {
     }
 
     private void submitLevelSessionTime() {
-        // nada que sumar si no es nivel jugable (evita sumar en elevador/animación nivel 9)
         if (!isGameplayLevel()) {
             levelSessionTime = 0f;
             levelSessionTimeSubmitted = true;
@@ -568,5 +609,30 @@ public abstract class BasePlayScreen implements Screen {
         int idx = (int) (t * 3.0f);
         if (idx > 2) idx = 2;
         return arr[idx];
+    }
+
+    // === Auxiliares historial ===
+    /** Llamar desde GameScreen.resetLevel() para contar intentos. */
+    protected void notifyRestart() {
+        restartCount++; // inicia en 1
+    }
+
+    private String formatDate(long millis) {
+        try {
+            // hora con guiones (HH-mm-ss)
+            return new SimpleDateFormat("yyyy/MM/dd HH-mm-ss").format(new Date(millis));
+        } catch (Exception e) {
+            return String.valueOf(millis);
+        }
+    }
+
+    private void savePartida(String fechaStr, int intentos, String logros, int tiempoSeg, int nivel) {
+        try {
+            Usuario u = ManejoUsuarios.UsuarioActivo;
+            if (u == null) return;
+            if (u.historial == null) return;
+            Partida p = new Partida(fechaStr, intentos, logros, tiempoSeg, nivel);
+            u.historial.add(p);
+        } catch (Exception ignored) {}
     }
 }
