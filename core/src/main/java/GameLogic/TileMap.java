@@ -6,6 +6,7 @@ public class TileMap {
 
     public static final char WALL = '#';
     public static final char FLOOR = '.';
+    public static final char OUTSIDE = ' ';
     public static final char TARGET = '+';
     public static final char BOX = '$';
     public static final char PLAYER = '@';

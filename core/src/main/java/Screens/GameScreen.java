@@ -87,6 +87,9 @@ public final class GameScreen extends BasePlayScreen {
 
                 char ch = map.getTile(col, row);
                 switch (ch) {
+                    case TileMap.OUTSIDE:
+                        batch.draw(outsideTexture, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
+                        break;
                     case TileMap.WALL:
                         batch.draw(wallTexture, px, py, GameConfig.TILE_SIZE, GameConfig.TILE_SIZE);
                         break;

@@ -66,7 +66,7 @@ public abstract class BasePlayScreen implements Screen {
     protected FreeTypeFontGenerator fontGenerator;
     protected FreeTypeFontParameter fontParameter;
 
-    protected Texture floorTexture, wallTexture;
+    protected Texture floorTexture, wallTexture, outsideTexture;
 
     protected Texture[] downFrames, upFrames, leftFrames, rightFrames;
 
@@ -471,6 +471,7 @@ public abstract class BasePlayScreen implements Screen {
 
         floorTexture = load("textures/floor.png");
         wallTexture = load("textures/wall.png");
+        outsideTexture = load("textures/black.png");
 
         Texture downWalk1 = load("textures/player_down_walk1.png");
         Texture downIdle = load("textures/player_down_idle.png");
@@ -520,6 +521,7 @@ public abstract class BasePlayScreen implements Screen {
     protected void disposeCommonAssets() {
         floorTexture.dispose();
         wallTexture.dispose();
+        outsideTexture.dispose();
         btnTexture.dispose();
 
         for (Texture t : downFrames) t.dispose();
