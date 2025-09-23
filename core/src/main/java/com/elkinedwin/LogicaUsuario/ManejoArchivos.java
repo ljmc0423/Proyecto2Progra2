@@ -71,7 +71,7 @@ public class ManejoArchivos {
         archivoDatos.writeLong(0L);
         archivoDatos.seek(16);
         archivoDatos.writeUTF(nombre == null ? "" : nombre);
-        String imgDefecto = "../Imagenes/LogoU.png";
+        String imgDefecto = "ui/avatar_default.png";
         StringBuilder datos = new StringBuilder();
         datos.append(usuario == null ? "" : usuario).append(',')
              .append(contrasena == null ? "" : contrasena).append(',')

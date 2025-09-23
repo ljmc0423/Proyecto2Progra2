@@ -46,23 +46,19 @@ public class ConfigScreen extends BaseScreen {
     protected void onShow() {
         skin = buildSkin();
 
-        // Fuente un poco más grande
         BitmapFont f = skin.getFont("default-font");
         f.getData().setScale(1.15f);
 
-        int kUp    = getCfg("MoverArriba",  Input.Keys.UP);
-        int kDown  = getCfg("MoverAbajo",   Input.Keys.DOWN);
-        int kLeft  = getCfg("MoverIzq",     Input.Keys.LEFT);
-        int kRight = getCfg("MoverDer",     Input.Keys.RIGHT);
+        int kUp    = getCfg("MoverArriba",  Input.Keys.W);
+        int kDown  = getCfg("MoverAbajo",   Input.Keys.S);
+        int kLeft  = getCfg("MoverIzq",     Input.Keys.A);
+        int kRight = getCfg("MoverDer",     Input.Keys.D);
         int kRei   = getCfg("Reiniciar",    Input.Keys.R);
 
         Integer vVol = cfgAny("volumen", "Volumen");
         volOriginal = vVol != null ? vVol : 70;
 
-        Integer vId = cfgAny("idioma", "Idioma");
-        idiomaOriginal = vId != null ? vId : 1;
 
-        // Fondo degradado
         gradientTex = makeVerticalGradient(16, 400,
                 new Color(0.08f, 0.10f, 0.13f, 1f),
                 new Color(0.12f, 0.14f, 0.18f, 1f));
@@ -71,7 +67,6 @@ public class ConfigScreen extends BaseScreen {
         bg.setScaling(Scaling.fill);
         stage.addActor(bg);
 
-        // === Secciones (sin título general) ===
         kbUp        = new KeyBinder("Arriba",     "MoverArriba", kUp);
         kbDown      = new KeyBinder("Abajo",      "MoverAbajo",  kDown);
         kbLeft      = new KeyBinder("Izquierda",  "MoverIzq",    kLeft);
@@ -175,15 +170,7 @@ public class ConfigScreen extends BaseScreen {
         cardAudio.add(ta).growX();
         content.add(cardAudio).growX().padBottom(14f).row();
 
-        // Tarjeta: IDIOMA
-        Table cardIdioma = makeCard();
-        cardIdioma.add(tituloIdioma).left().padBottom(8f).row();
-        Table ti = new Table();
-        ti.defaults().pad(8f);
-        ti.add(new Label("Seleccionar", skin)).left().padRight(12f).width(150f);
-        ti.add(sbIdioma).width(300f).left();
-        cardIdioma.add(ti).growX();
-        content.add(cardIdioma).growX().padBottom(10f).row();
+        
 
         // Footer botones
         Table botones = new Table();

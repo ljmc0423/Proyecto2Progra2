@@ -54,23 +54,23 @@ public class MiPerfilScreen extends BaseScreen {
     @Override
     protected void onShow() {
         generator = new FreeTypeFontGenerator(files.internal("fonts/pokemon_fire_red.ttf"));
-        titleFont = genFont(88, "E6DFC9");
-        h2Font    = genFont(48, "E6DFC9");
-        bodyFont  = genFont(34, "E6DFC9");
-        smallFont = genFont(26, "BFC4D0");
+        titleFont = genFont(60, "000000");
+        h2Font    = genFont(30, "000000");
+        bodyFont  = genFont(20, "000000");
+        smallFont = genFont(10, "000000");
 
         Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, titleFont.getColor());
         Label.LabelStyle h2Style    = new Label.LabelStyle(h2Font,    h2Font.getColor());
-        Label.LabelStyle keyStyle   = new Label.LabelStyle(bodyFont,  new Color(1,1,1,0.85f));
-        Label.LabelStyle valStyle   = new Label.LabelStyle(bodyFont,  Color.WHITE);
-        Label.LabelStyle cellStyle  = new Label.LabelStyle(bodyFont,  Color.WHITE);
-        Label.LabelStyle thStyle    = new Label.LabelStyle(bodyFont,  new Color(1,1,1,0.95f));
+        Label.LabelStyle keyStyle   = new Label.LabelStyle(bodyFont,  Color.BLACK);
+        Label.LabelStyle valStyle   = new Label.LabelStyle(bodyFont,  Color.BLACK);
+        Label.LabelStyle cellStyle  = new Label.LabelStyle(bodyFont,  Color.BLACK);
+        Label.LabelStyle thStyle    = new Label.LabelStyle(bodyFont,  Color.BLACK);
         Label.LabelStyle hintStyle  = new Label.LabelStyle(smallFont, smallFont.getColor());
 
         texPanelBg  = makeColorTex(255, 255, 255, 22);
         texDivider  = makeColorTex(255, 255, 255, 38);
 
-        String editIconPath = "../Imagenes/Editar.png";
+        String editIconPath = "ui/boton_cambiar.png";
         if (files.internal(editIconPath).exists()) {
             texEditIcon = new Texture(files.internal(editIconPath));
         } else if (files.internal("ui/edit.png").exists()) {
@@ -90,17 +90,17 @@ public class MiPerfilScreen extends BaseScreen {
 
         TextButton.TextButtonStyle backStyle = new TextButton.TextButtonStyle();
         backStyle.font = bodyFont;
-        backStyle.fontColor = Color.WHITE;
-        backStyle.overFontColor = Color.WHITE;
-        backStyle.downFontColor = Color.WHITE;
-        backStyle.checkedFontColor = Color.WHITE;
-        backStyle.disabledFontColor = Color.WHITE;
+        backStyle.fontColor = Color.BLACK;
+        backStyle.overFontColor = Color.BLACK;
+        backStyle.downFontColor = Color.BLACK;
+        backStyle.checkedFontColor = Color.BLACK;
+        backStyle.disabledFontColor = Color.BLACK;
         Texture transparent = makeColorTex(0,0,0,0);
         TextureRegionDrawable trd = new TextureRegionDrawable(new TextureRegion(transparent));
         backStyle.up = trd; backStyle.over = trd; backStyle.down = trd; backStyle.checked = trd; backStyle.disabled = trd;
 
-        TextButton btnBack = new TextButton("Volver", backStyle);
-        btnBack.getLabel().setColor(Color.WHITE);
+        TextButton btnBack = new TextButton("REGRESAR", backStyle);
+        btnBack.getLabel().setColor(Color.BLACK);
         btnBack.addListener(new ClickListener() {
             @Override public void clicked(InputEvent event, float x, float y) { game.setScreen(new MenuScreen(game)); }
         });
@@ -124,6 +124,7 @@ public class MiPerfilScreen extends BaseScreen {
         reloadAvatar();
 
         ImageButton btnEditAvatar = new ImageButton(editStyle);
+        
         btnEditAvatar.addListener(new ClickListener() {
             @Override public void clicked(InputEvent event, float x, float y) { onChangeAvatar(); }
         });
@@ -131,14 +132,14 @@ public class MiPerfilScreen extends BaseScreen {
         Table avatarRow = new Table();
         avatarRow.add(avatarImg).size(220f, 220f).center().padRight(12f);
         avatarRow.add().width(8f);
-        avatarRow.add(btnEditAvatar).size(48f, 48f).top().right();
+        avatarRow.add(btnEditAvatar).size(122f, 28f).top().right();
         content.add(avatarRow).center().row();
 
         String displayName = (u != null && u.getNombre()!=null && !u.getNombre().isEmpty())
                 ? u.getNombre() : (u != null ? u.getUsuario() : "Invitado");
         content.add(new Label(displayName, titleStyle)).padTop(2f).center().row();
 
-        content.add(cardHeader("Datos de la cuenta", h2Style)).expandX().fillX().row();
+        content.add(cardHeader("DATOS DE USUARIO", h2Style)).expandX().fillX().row();
 
         Table cardInfo = new Table();
         cardInfo.setBackground(panelBg);
@@ -154,7 +155,7 @@ public class MiPerfilScreen extends BaseScreen {
         Table rUsuario = kvRowWithValue("Usuario", lblUsuarioVal, keyStyle);
         ImageButton btnEditUsuario = new ImageButton(editStyle);
         btnEditUsuario.addListener(new ClickListener() { @Override public void clicked(InputEvent e,float x,float y){ onEditUsuario(); }});
-        rUsuario.add(btnEditUsuario).size(32f, 32f).padLeft(8f);
+        rUsuario.add(btnEditUsuario).size(122f, 28f).padLeft(8f);
         cardInfo.add(rUsuario).expandX().fillX().row();
         addDivider(cardInfo, dividerBg);
 
@@ -162,7 +163,7 @@ public class MiPerfilScreen extends BaseScreen {
         Table rPass = kvRowWithValue("Contrasena", lblPassVal, keyStyle);
         ImageButton btnEditPass = new ImageButton(editStyle);
         btnEditPass.addListener(new ClickListener() { @Override public void clicked(InputEvent e,float x,float y){ onEditPass(); }});
-        rPass.add(btnEditPass).size(32f, 32f).padLeft(8f);
+        rPass.add(btnEditPass).size(122f, 28f).padLeft(8f);
         cardInfo.add(rPass).expandX().fillX().row();
         addDivider(cardInfo, dividerBg);
 
@@ -173,11 +174,11 @@ public class MiPerfilScreen extends BaseScreen {
 
         int partidasJugadas = 0;
         if (u != null && u.historial != null) partidasJugadas = u.historial.size();
-        cardInfo.add(kvRow("Total partidas jugadas", String.valueOf(partidasJugadas), keyStyle, valStyle)).expandX().fillX().row();
-
+        cardInfo.add(kvRow("Total partidas jugadas", "  "+String.valueOf(partidasJugadas), keyStyle, valStyle)).expandX().fillX().row();
+        
         content.add(cardInfo).expandX().fillX().row();
 
-        content.add(cardHeader("Mis Estadisticas", h2Style)).expandX().fillX().padTop(12f).row();
+        content.add(cardHeader("ESTADISTICAS", h2Style)).expandX().fillX().padTop(12f).row();
 
         Table cardProg = new Table();
         cardProg.setBackground(panelBg);
@@ -187,10 +188,10 @@ public class MiPerfilScreen extends BaseScreen {
         Table header = new Table();
         header.defaults().left().pad(6f);
         header.add(new Label("Nivel", thStyle)).width(120f);
-        header.add(new Label("Estado", thStyle)).width(200f);
-        header.add(new Label("Partidas", thStyle)).width(120f);
-        header.add(new Label("Tiempo promedio ", thStyle)).width(220f);
-        header.add(new Label("Mejor tiempo", thStyle)).width(200f);
+        header.add(new Label("Completado", thStyle)).width(200f);
+        header.add(new Label("Partidas", thStyle)).width(160f);
+        header.add(new Label("Tiempo promedio ", thStyle)).width(260f);
+        header.add(new Label("Mejor tiempo", thStyle)).width(240f);
         header.add(new Label("Mejor puntuacion", thStyle)).width(200f).row();
         cardProg.add(header).expandX().fillX().row();
 
@@ -215,10 +216,10 @@ public class MiPerfilScreen extends BaseScreen {
             Table row = new Table();
             row.defaults().left().pad(6f);
             row.add(new Label("Nivel " + n, cellStyle)).width(120f);
-            row.add(new Label(completo ? "Completado" : "Sin completar", cellStyle)).width(200f);
-            row.add(new Label(partidasTxt, cellStyle)).width(120f);
-            row.add(new Label(promedioTxt, cellStyle)).width(220f);
-            row.add(new Label(mejorTiempoTxt, cellStyle)).width(200f);
+            row.add(new Label(completo ? "O" : "X", cellStyle)).width(200f);
+            row.add(new Label(partidasTxt, cellStyle)).width(160f);
+            row.add(new Label(promedioTxt, cellStyle)).width(260f);
+            row.add(new Label(mejorTiempoTxt, cellStyle)).width(240f);
             row.add(new Label(bestStepsTxt, cellStyle)).width(200f).row();
 
             cardProg.add(row).expandX().fillX().row();
@@ -249,23 +250,23 @@ public class MiPerfilScreen extends BaseScreen {
 
         winStyleCached = new Window.WindowStyle();
         winStyleCached.titleFont = bodyFont;
-        winStyleCached.titleFontColor = Color.WHITE;
+        winStyleCached.titleFontColor = Color.BLACK;
         winStyleCached.background = dlgBgDr;
 
         tfStyleCached = new TextField.TextFieldStyle();
         tfStyleCached.font = bodyFont;
-        tfStyleCached.fontColor = Color.WHITE;
+        tfStyleCached.fontColor = Color.BLACK;
         tfStyleCached.background = tfBgDr;
         tfStyleCached.selection = tfSelDr;
         tfStyleCached.cursor = tfCurDr;
 
         btnStyleCached = new TextButton.TextButtonStyle();
         btnStyleCached.font = bodyFont;
-        btnStyleCached.fontColor = Color.WHITE;
-        btnStyleCached.overFontColor = Color.WHITE;
-        btnStyleCached.downFontColor = Color.WHITE;
-        btnStyleCached.checkedFontColor = Color.WHITE;
-        btnStyleCached.disabledFontColor = Color.WHITE;
+        btnStyleCached.fontColor = Color.BLACK;
+        btnStyleCached.overFontColor = Color.BLACK;
+        btnStyleCached.downFontColor = Color.BLACK;
+        btnStyleCached.checkedFontColor = Color.BLACK;
+        btnStyleCached.disabledFontColor = Color.BLACK;
         btnStyleCached.up = btnClearDr; btnStyleCached.down = btnClearDr; btnStyleCached.over = btnClearDr;
         btnStyleCached.checked = btnClearDr; btnStyleCached.disabled = btnClearDr;
     }
@@ -309,9 +310,9 @@ public class MiPerfilScreen extends BaseScreen {
         final Dialog dlg = new Dialog("Editar usuario", winStyleCached);
         Table c = dlg.getContentTable(); c.pad(16f); c.defaults().pad(6f).fillX();
 
-        Label l = new Label("Nuevo usuario :", new Label.LabelStyle(bodyFont, Color.WHITE));
+        Label l = new Label("Nuevo usuario :", new Label.LabelStyle(bodyFont, Color.BLACK));
         final TextField tf = new TextField("", tfStyleCached);
-        final Label err  = new Label("", new Label.LabelStyle(smallFont, Color.SALMON));
+        final Label err  = new Label("", new Label.LabelStyle(smallFont, Color.GRAY));
 
         c.add(l).left().row();
         c.add(tf).width(380f).row();
@@ -342,13 +343,13 @@ public class MiPerfilScreen extends BaseScreen {
         final Dialog dlg = new Dialog("Editar contrasena", winStyleCached);
         Table c = dlg.getContentTable(); c.pad(16f); c.defaults().pad(6f).fillX();
 
-        Label l1 = new Label("Nueva contrasena :", new Label.LabelStyle(bodyFont, Color.WHITE));
-        Label l2 = new Label("Confirmar:", new Label.LabelStyle(bodyFont, Color.WHITE));
+        Label l1 = new Label("Nueva contrasena :", new Label.LabelStyle(bodyFont, Color.BLACK));
+        Label l2 = new Label("Confirmar:", new Label.LabelStyle(bodyFont, Color.BLACK));
         final TextField tf1 = new TextField("", tfStyleCached);
         final TextField tf2 = new TextField("", tfStyleCached);
-        tf1.setPasswordMode(true); tf1.setPasswordCharacter('*');
-        tf2.setPasswordMode(true); tf2.setPasswordCharacter('*');
-        final Label err  = new Label("", new Label.LabelStyle(smallFont, Color.SALMON));
+        tf1.setPasswordMode(true); tf1.setPasswordCharacter('.');
+        tf2.setPasswordMode(true); tf2.setPasswordCharacter('.');
+        final Label err  = new Label("", new Label.LabelStyle(smallFont, Color.GRAY));
 
         c.add(l1).left().row();
         c.add(tf1).width(380f).row();
@@ -380,7 +381,7 @@ public class MiPerfilScreen extends BaseScreen {
     }
 
     private void showDialog(Dialog dlg, Actor focus) {
-        dlg.setColor(Color.WHITE);
+        dlg.setColor(Color.BLACK);
         dlg.show(stage);
         dlg.toFront();
         dlg.invalidateHierarchy();
@@ -391,8 +392,8 @@ public class MiPerfilScreen extends BaseScreen {
     }
 
     private void forceWhiteText(Actor a) {
-        if (a instanceof Label) ((Label)a).setColor(Color.WHITE);
-        if (a instanceof TextButton) ((TextButton)a).getLabel().setColor(Color.WHITE);
+        if (a instanceof Label) ((Label)a).setColor(Color.BLACK);
+        if (a instanceof TextButton) ((TextButton)a).getLabel().setColor(Color.BLACK);
         if (a instanceof Group) for (Actor ch : ((Group)a).getChildren()) forceWhiteText(ch);
     }
 
@@ -460,7 +461,7 @@ public class MiPerfilScreen extends BaseScreen {
     private String mask(String s){
         if (s == null || s.isEmpty()) return "-";
         StringBuilder b = new StringBuilder();
-        for (int i = 0; i < s.length(); i++) b.append('*');
+        for (int i = 0; i < s.length(); i++) b.append('.');
         return b.toString();
     }
 

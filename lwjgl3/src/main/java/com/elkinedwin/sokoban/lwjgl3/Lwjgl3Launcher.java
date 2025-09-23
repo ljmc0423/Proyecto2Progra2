@@ -16,14 +16,14 @@ public class Lwjgl3Launcher {
 
     private static Lwjgl3ApplicationConfiguration getDefaultConfiguration() {
         Lwjgl3ApplicationConfiguration configuration = new Lwjgl3ApplicationConfiguration();
-        configuration.setTitle("Sokoban");
+        configuration.setTitle("Sokoban Edición Machoke");
         configuration.useVsync(true);
         configuration.setForegroundFPS(
                 Lwjgl3ApplicationConfiguration.getDisplayMode().refreshRate);
 
-        configuration.setWindowedMode(1536, 864);
+        configuration.setWindowedMode(1600, 900);
 
-        configuration.setWindowIcon("libgdx128.png", "libgdx64.png", "libgdx32.png", "libgdx16.png");
+        configuration.setWindowIcon("player_down_idle.png", "player_down_idle.png", "player_down_idle.png", "player_down_idle.png");
         return configuration;
     }
 }

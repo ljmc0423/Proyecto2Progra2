@@ -38,6 +38,10 @@ public class LoginScreen extends BaseScreen {
     @Override
     protected void onShow() {
         ManejoArchivos.iniciarCpadre();
+        
+        Texture bgTex = new Texture("ui/titlescreen.png"); //fondo
+        Image bgImg = new Image(bgTex);
+        bgImg.setFillParent(true);
 
         if (files.internal("fonts/pokemon_fire_red.ttf").exists()) {
             skin = buildSkin("fonts/pokemon_fire_red.ttf");
@@ -72,18 +76,32 @@ public class LoginScreen extends BaseScreen {
         btnCrear.addListener(createListener);
         btnSalir.addListener(exitListener);
 
+        stage.addActor(bgImg); // atrás de todo
         Table root = new Table();
         root.setFillParent(true);
         stage.addActor(root);
 
-        root.top().padTop(40f);
-        if (titleImg != null) root.add(titleImg).center().padBottom(70f).row();
-        else root.add(lblTitle).center().padBottom(70f).row();
+        //mover tabla a izq
+        root.top().left().padTop(80f).padLeft(30f);//mover aqui
 
-        root.defaults().padTop(14f).padBottom(14f);
-        if (loginImg != null) root.add(loginImg).center().row(); else root.add(btnLogin).center().row();
-        if (createPlayerImg != null) root.add(createPlayerImg).center().row(); else root.add(btnCrear).center().row();
-        if (exitImg != null) root.add(exitImg).center().padTop(28f).row(); else root.add(btnSalir).center().padTop(28f).row();
+        //titulo
+        if (titleImg != null) 
+            root.add(titleImg).left().padBottom(70f).row();
+        else 
+            root.add(lblTitle).left().padBottom(70f).row();
+
+        //botones
+        root.defaults().padTop(14f).padBottom(14f); //espaciado entre filas
+
+        if (loginImg != null) root.add(loginImg).left().row(); 
+        else root.add(btnLogin).left().row();
+
+        if (createPlayerImg != null) root.add(createPlayerImg).left().padRight(5f).row(); 
+        else root.add(btnCrear).left().row();
+
+        if (exitImg != null) root.add(exitImg).left().padTop(28f).row(); 
+        else root.add(btnSalir).left().padTop(28f).row();
+
     }
 
     @Override
@@ -95,38 +113,75 @@ public class LoginScreen extends BaseScreen {
         if (exitTex != null) exitTex.dispose();
         if (skin != null) skin.dispose();
     }
-
+    
     private void loginDialog() {
-        final Dialog dialog = new Dialog("Iniciar sesion", skin);
+        final Dialog dialog = new Dialog("", skin);
+
         Table content = dialog.getContentTable();
-        content.pad(16f);
+        content.padTop(24f);
+        content.padLeft(24f);
+        content.padRight(24f);
+        content.padBottom(24f);
         content.defaults().pad(6f).fillX();
 
-        final TextField user = new TextField("", skin, skin.has("tfSmall", TextField.TextFieldStyle.class) ? "tfSmall" : "default");
+        // --- TITLE ---
+        Label.LabelStyle titleStyle = new Label.LabelStyle(skin.get(Label.LabelStyle.class));
+        BitmapFont clonedTitleFont = new BitmapFont(titleStyle.font.getData(), titleStyle.font.getRegion(), false);
+        clonedTitleFont.getData().setScale(0.6f); // match previous smaller title
+        titleStyle.font = clonedTitleFont;
+        Label titleLabel = new Label("INICIAR SESION", titleStyle);
+        content.add(titleLabel).center().padBottom(20f).row();
+
+        // --- FIELD LABELS ---
+        Label.LabelStyle fieldLabelStyle = new Label.LabelStyle(skin.get(Label.LabelStyle.class));
+        BitmapFont clonedFieldFont = new BitmapFont(fieldLabelStyle.font.getData(), fieldLabelStyle.font.getRegion(), false);
+        clonedFieldFont.getData().setScale(0.6f);
+        fieldLabelStyle.font = clonedFieldFont;
+
+        // --- TEXT FIELDS ---
+        TextField.TextFieldStyle fieldTextStyle = new TextField.TextFieldStyle(skin.get(TextField.TextFieldStyle.class));
+        BitmapFont clonedTF = new BitmapFont(fieldTextStyle.font.getData(), fieldTextStyle.font.getRegion(), false);
+        clonedTF.getData().setScale(0.5f);
+        fieldTextStyle.font = clonedTF;
+
+        final TextField user = new TextField("", fieldTextStyle);
         user.setMessageText("Usuario");
         user.setTextFieldFilter(onlyAlnumFilter());
 
-        final TextField password = new TextField("", skin, skin.has("tfSmall", TextField.TextFieldStyle.class) ? "tfSmall" : "default");
+        final TextField password = new TextField("", fieldTextStyle);
         password.setMessageText("Contrasena");
         password.setPasswordMode(true);
-        password.setPasswordCharacter('*');
+        password.setPasswordCharacter('.');
         password.setTextFieldFilter(onlyAlnumFilter());
 
-        final Label error = new Label("", skin, skin.has("error", Label.LabelStyle.class) ? "error" : "default");
-        if (!skin.has("error", Label.LabelStyle.class)) error.setColor(Color.SALMON);
+        final Label error = new Label("", fieldLabelStyle);
+        error.setColor(Color.GRAY);
 
-        content.add(new Label("Usuario", skin)).left().row();
-        content.add(user).width(340f).row();
-        content.add(new Label("Contrasena", skin)).left().row();
-        content.add(password).width(340f).row();
-        content.add(error).left().row();
+        content.add(new Label("Usuario", fieldLabelStyle)).left().padLeft(10f).row();
+        content.add(user).width(380f).height(32f).padLeft(10f).row();
+        content.add(new Label("Contrasena", fieldLabelStyle)).left().padLeft(10f).row();
+        content.add(password).width(380f).height(32f).padLeft(10f).row();
+        content.add(error).left().padLeft(10f).row();
 
-        TextButton cancelBtn = new TextButton("Cancelar", skin);
-        TextButton okBtn = new TextButton("Entrar", skin);
+        // --- BUTTONS ---
+        TextButton.TextButtonStyle buttonStyle = new TextButton.TextButtonStyle(skin.get(TextButton.TextButtonStyle.class));
+        BitmapFont clonedBtnFont = new BitmapFont(buttonStyle.font.getData(), buttonStyle.font.getRegion(), false);
+        clonedBtnFont.getData().setScale(0.35f);
+        buttonStyle.font = clonedBtnFont;
 
-        cancelBtn.addListener(new ClickListener() { @Override public void clicked(InputEvent event, float x, float y) { dialog.hide(); }});
+        TextButton cancelBtn = new TextButton("Cancelar", buttonStyle);
+        TextButton okBtn = new TextButton("Entrar", buttonStyle);
+
+        cancelBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                dialog.hide();
+            }
+        });
+
         okBtn.addListener(new ClickListener() {
-            @Override public void clicked(InputEvent event, float x, float y) {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
                 String u = user.getText().trim();
                 String p = password.getText().trim();
 
@@ -143,7 +198,6 @@ public class LoginScreen extends BaseScreen {
                     }
 
                     ManejoArchivos.setArchivo(u);
-
                     long ahora = System.currentTimeMillis();
                     ManejoUsuarios.UsuarioActivo = new com.elkinedwin.LogicaUsuario.Usuario(u, "", "", ahora);
 
@@ -167,7 +221,6 @@ public class LoginScreen extends BaseScreen {
                     ManejoUsuarios.UsuarioActivo.sesionActual = ahora;
 
                     ArchivoGuardar.guardarFechas();
-
                     dialog.hide();
                     game.setScreen(new MenuScreen(game));
 
@@ -177,53 +230,89 @@ public class LoginScreen extends BaseScreen {
             }
         });
 
+        dialog.show(stage);
+        dialog.setSize(450f, dialog.getHeight() + 40f); //más ancho
+
         Table bt = dialog.getButtonTable();
-        bt.pad(0,16f,16f,16f);
-        bt.defaults().width(140f).height(54f).padLeft(8f).padRight(8f);
+        bt.padTop(16f).padBottom(20f).padLeft(16f).padRight(16f);
+        bt.defaults().width(140f).height(40f).space(24f); //botones encogidos
         bt.add(cancelBtn);
         bt.add(okBtn);
 
-        dialog.show(stage);
         stage.setKeyboardFocus(user);
     }
 
     private void createPlayerDialog() {
-        final Dialog dialog = new Dialog("Crear jugador", skin);
+        //caja sin titulo, se sale de los bordes
+        final Dialog dialog = new Dialog("", skin);
+
         Table content = dialog.getContentTable();
-        content.pad(16f);
+        content.padTop(24f); //bajando contenido de tabla
+        content.padLeft(24f);
+        content.padRight(24f);
+        content.padBottom(24f);
         content.defaults().pad(6f).fillX();
 
-        final TextField user = new TextField("", skin, skin.has("tfSmall", TextField.TextFieldStyle.class) ? "tfSmall" : "default");
+        Label.LabelStyle titleStyle = new Label.LabelStyle(skin.get(Label.LabelStyle.class));
+        BitmapFont clonedTitleFont = new BitmapFont(titleStyle.font.getData(), titleStyle.font.getRegion(), false);
+        clonedTitleFont.getData().setScale(0.6f);
+        titleStyle.font = clonedTitleFont;
+        Label titleLabel = new Label("CREAR JUGADOR", titleStyle);
+        content.add(titleLabel).center().padBottom(20f).row();
+
+        Label.LabelStyle fieldLabelStyle = new Label.LabelStyle(skin.get(Label.LabelStyle.class));
+        BitmapFont clonedFieldFont = new BitmapFont(fieldLabelStyle.font.getData(), fieldLabelStyle.font.getRegion(), false);
+        clonedFieldFont.getData().setScale(0.6f);
+        fieldLabelStyle.font = clonedFieldFont;
+
+        TextField.TextFieldStyle fieldTextStyle = new TextField.TextFieldStyle(skin.get(TextField.TextFieldStyle.class));
+        BitmapFont clonedTF = new BitmapFont(fieldTextStyle.font.getData(), fieldTextStyle.font.getRegion(), false);
+        clonedTF.getData().setScale(0.5f);
+        fieldTextStyle.font = clonedTF;
+
+        final TextField user = new TextField("", fieldTextStyle);
         user.setMessageText("Usuario");
         user.setTextFieldFilter(onlyAlnumFilter());
 
-        final TextField name = new TextField("", skin, skin.has("tfSmall", TextField.TextFieldStyle.class) ? "tfSmall" : "default");
+        final TextField name = new TextField("", fieldTextStyle);
         name.setMessageText("Nombre");
         name.setTextFieldFilter(onlyAlnumFilter());
 
-        final TextField password = new TextField("", skin, skin.has("tfSmall", TextField.TextFieldStyle.class) ? "tfSmall" : "default");
+        final TextField password = new TextField("", fieldTextStyle);
         password.setMessageText("Contrasena");
         password.setPasswordMode(true);
-        password.setPasswordCharacter('*');
+        password.setPasswordCharacter('.');
         password.setTextFieldFilter(onlyAlnumFilter());
 
-        final Label error = new Label("", skin, skin.has("error", Label.LabelStyle.class) ? "error" : "default");
-        if (!skin.has("error", Label.LabelStyle.class)) error.setColor(Color.SALMON);
+        final Label error = new Label("", fieldLabelStyle);
+        error.setColor(Color.GRAY);
 
-        content.add(new Label("Usuario", skin)).left().row();
-        content.add(user).width(340f).row();
-        content.add(new Label("Nombre", skin)).left().row();
-        content.add(name).width(340f).row();
-        content.add(new Label("Contrasena", skin)).left().row();
-        content.add(password).width(340f).row();
-        content.add(error).left().row();
+        content.add(new Label("Usuario", fieldLabelStyle)).left().padLeft(10f).row();
+        content.add(user).width(380f).height(32f).padLeft(10f).row();
+        content.add(new Label("Nombre", fieldLabelStyle)).left().padLeft(10f).row();
+        content.add(name).width(380f).height(32f).padLeft(10f).row();
+        content.add(new Label("Contrasena", fieldLabelStyle)).left().padLeft(10f).row();
+        content.add(password).width(380f).height(32f).padLeft(10f).row();
+        content.add(error).left().padLeft(10f).row();
 
-        TextButton cancelBtn = new TextButton("Cancelar", skin);
-        TextButton createBtn = new TextButton("Crear", skin);
+        TextButton.TextButtonStyle buttonStyle = new TextButton.TextButtonStyle(skin.get(TextButton.TextButtonStyle.class));
+        BitmapFont clonedBtnFont = new BitmapFont(buttonStyle.font.getData(), buttonStyle.font.getRegion(), false);
+        clonedBtnFont.getData().setScale(0.35f);
+        buttonStyle.font = clonedBtnFont;
 
-        cancelBtn.addListener(new ClickListener() { @Override public void clicked(InputEvent event, float x, float y) { dialog.hide(); }});
+        TextButton cancelBtn = new TextButton("Cancelar", buttonStyle);
+        TextButton createBtn = new TextButton("Crear", buttonStyle);
+
+        cancelBtn.addListener(new ClickListener() {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                dialog.hide();
+            }
+        });
+
         createBtn.addListener(new ClickListener() {
-            @Override public void clicked(InputEvent event, float x, float y) {
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
                 String u = user.getText().trim();
                 String n = name.getText().trim();
                 String p = password.getText().trim();
@@ -243,7 +332,7 @@ public class LoginScreen extends BaseScreen {
                     ManejoArchivos.crearUsuario(n, u, p);
 
                     dialog.hide();
-                    new Dialog("Listo", skin).text("Usuario creado").button("OK", true).show(stage);
+                    new Dialog("", skin).text("Usuario creado").button("OK", true).show(stage);
 
                 } catch (Exception ex) {
                     error.setText("Fallo");
@@ -251,15 +340,23 @@ public class LoginScreen extends BaseScreen {
             }
         });
 
+        //caja de dialogo más ancha
+        dialog.show(stage);
+        dialog.setSize(450f, dialog.getHeight() + 40f);
+
+        //botones menos anchos
         Table bt = dialog.getButtonTable();
-        bt.pad(0,16f,16f,16f);
-        bt.defaults().width(140f).height(54f).padLeft(8f).padRight(8f);
+        bt.padTop(16f).padBottom(20f).padLeft(16f).padRight(16f);
+        bt.defaults().width(140f).height(40f).space(24f);
         bt.add(cancelBtn);
         bt.add(createBtn);
 
-        dialog.show(stage);
         stage.setKeyboardFocus(user);
     }
+
+    
+    
+
 
     private static Skin buildSkin(String ttfPath) {
         Skin skin = new Skin();

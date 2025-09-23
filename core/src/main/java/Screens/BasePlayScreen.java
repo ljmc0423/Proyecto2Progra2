@@ -83,7 +83,7 @@ public abstract class BasePlayScreen implements Screen {
 
     protected boolean tweenActive = false;
     protected float tweenTime = 0f;
-    protected float tweenDuration = 0.165f;
+    protected float tweenDuration = 0.3f;
     protected float spriteXStart, spriteYStart, spriteXEnd, spriteYEnd;
     protected float drawPX, drawPY;
 
@@ -407,9 +407,9 @@ public abstract class BasePlayScreen implements Screen {
                 // registrar partida ganada
                 if (isGameplayLevel() && !historyRecorded) {
                     int elapsedSecReal = (int) ((System.currentTimeMillis() - runStartMillis) / 1000L);
-                    StringBuilder lg = new StringBuilder("Haz completado el nivel");
-                    if (newBestSteps) lg.append("\nNuevo récord de pasos");
-                    if (newBestTime)  lg.append("\nNuevo récord de tiempo");
+                    StringBuilder lg = new StringBuilder("Nivel Completado");
+                    if (newBestSteps) lg.append("\nRecord de pasos");
+                    if (newBestTime)  lg.append("\nRecord de tiempo");
                     savePartida(startDateStr, restartCount, lg.toString(), elapsedSecReal, level);
                     historyRecorded = true;
                 }
@@ -462,7 +462,7 @@ public abstract class BasePlayScreen implements Screen {
     protected void loadCommonAssets() {
         fontGenerator = new FreeTypeFontGenerator(files.internal("fonts/pokemon_fire_red.ttf"));
         fontParameter = new FreeTypeFontParameter();
-        fontParameter.size = 20;
+        fontParameter.size = 10;
         fontParameter.color = Color.WHITE;
         fontParameter.borderWidth = 1;
         fontParameter.borderColor = Color.BLACK;

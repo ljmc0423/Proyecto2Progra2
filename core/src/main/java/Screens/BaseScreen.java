@@ -9,7 +9,8 @@ import com.badlogic.gdx.utils.viewport.ScreenViewport;
 
 public abstract class BaseScreen implements Screen {
 
-    protected final Color BACKGROUND = new Color(34 / 255f, 32 / 255f, 52 / 255f, 1f);
+    protected final Color BACKGROUND = new Color(0.9f, 0.9f, 0.9f, 1f);
+
     protected Stage stage;
 
     @Override
@@ -34,16 +35,13 @@ public abstract class BaseScreen implements Screen {
     }
 
     @Override
-    public void pause() {
-    }
+    public void pause() {}
 
     @Override
-    public void resume() {
-    }
+    public void resume() {}
 
     @Override
-    public void hide() {
-    }
+    public void hide() {}
 
     @Override
     public void dispose() {

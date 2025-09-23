@@ -28,7 +28,7 @@ public class MenuScreen extends BaseScreen {
 
     private Label lblTitle;
     private TextButton btnPlay, btnLevels, btnConfig, btnUniverso, btnExit;
-    // NUEVO
+    
     private TextButton btnHistorial;
 
     private BitmapFont titleFont, buttonFont;
@@ -44,17 +44,29 @@ public class MenuScreen extends BaseScreen {
 
     @Override
     protected void onShow() {
+        
+        final Texture bgTexture = new Texture("ui/menuscreen.png");
+        Image bgImage = new Image(bgTexture);
+        bgImage.setFillParent(true);
+        stage.addActor(bgImage);
+
         generator = new FreeTypeFontGenerator(files.internal("fonts/pokemon_fire_red.ttf"));
 
         FreeTypeFontGenerator.FreeTypeFontParameter pt = new FreeTypeFontGenerator.FreeTypeFontParameter();
         pt.size = 136;
-        pt.color = Color.valueOf("E6DFC9");
-        titleFont = generator.generateFont(pt);
+        pt.color = Color.BLACK;
+        BitmapFont rawTitleFont = generator.generateFont(pt);
 
         FreeTypeFontGenerator.FreeTypeFontParameter pb = new FreeTypeFontGenerator.FreeTypeFontParameter();
-        pb.size = 72;
-        pb.color = Color.valueOf("E6DFC9");
-        buttonFont = generator.generateFont(pb);
+        pb.size = 52;
+        pb.color = Color.BLACK;
+        BitmapFont rawButtonFont = generator.generateFont(pb);
+
+        titleFont = new BitmapFont(rawTitleFont.getData(), rawTitleFont.getRegions(), false);
+        titleFont.getData().setScale(0.6f);
+
+        buttonFont = new BitmapFont(rawButtonFont.getData(), rawButtonFont.getRegions(), false);
+        buttonFont.getData().setScale(0.6f);
 
         Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, titleFont.getColor());
         TextButton.TextButtonStyle btnStyle = new TextButton.TextButtonStyle();
@@ -64,12 +76,18 @@ public class MenuScreen extends BaseScreen {
         lblTitle = new Label("SOKOBAN", titleStyle);
         btnPlay = new TextButton("Jugar", btnStyle);
         btnLevels = new TextButton("Tutorial", btnStyle);
-        btnConfig = new TextButton("Configuraciones", btnStyle);
-        // NUEVO botón de historial
-        btnHistorial = new TextButton("Historial de Partidas", btnStyle);
-        btnUniverso = new TextButton("Universo Sokoban", btnStyle);
+        btnConfig = new TextButton("Opciones", btnStyle);
+        btnHistorial = new TextButton("Historial", btnStyle);
+        btnUniverso = new TextButton("Leaderboard", btnStyle);
         btnExit = new TextButton("Cerrar Sesion", btnStyle);
 
+        // Subtitle below title
+        BitmapFont subtitleFont = new BitmapFont(buttonFont.getData(), buttonFont.getRegions(), false);
+        subtitleFont.getData().setScale(0.9f);
+        Label.LabelStyle subtitleStyle = new Label.LabelStyle(subtitleFont, Color.BLACK);
+        Label lblSubtitle = new Label("Edicion Machoke", subtitleStyle);
+
+        // Button listeners
         btnPlay.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent e, float x, float y) {
@@ -79,38 +97,36 @@ public class MenuScreen extends BaseScreen {
                         tutoHecho = ManejoUsuarios.UsuarioActivo.getTutocomplete();
                     }
                 } catch (Exception ignored) {}
-                if (!tutoHecho) {
-                    game.setScreen(new TutorialScreen(game));
-                } else {
-                    // Lógica “avanzada”: ir al hub/selector de niveles
-                    game.setScreen(new StageScreen(game));
-                    // Si prefieres arrancar en el nivel 1, usa:
-                    // game.setScreen(new GameScreen(game, 1));
-                }
+                
+                game.setScreen(new StageScreen(game));
+                
             }
         });
-
         btnLevels.addListener(new ClickListener() {
-            @Override public void clicked(InputEvent e, float x, float y) {
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
                 game.setScreen(new TutorialScreen(game));
             }
         });
         btnConfig.addListener(new ClickListener() {
-            @Override public void clicked(InputEvent e, float x, float y) {
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
                 game.setScreen(new ConfigScreen(game));
             }
         });
-        // NUEVO listener
         btnHistorial.addListener(new ClickListener() {
-            @Override public void clicked(InputEvent e, float x, float y) {
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
                 game.setScreen(new HistorialScreen(game));
             }
         });
         btnUniverso.addListener(new ClickListener() {
-            @Override public void clicked(InputEvent e, float x, float y) { }
+            @Override
+            public void clicked(InputEvent e, float x, float y) { }
         });
         btnExit.addListener(new ClickListener() {
-            @Override public void clicked(InputEvent e, float x, float y) {
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
                 try { ArchivoGuardar.guardarTodoCerrarSesion(); } catch (IOException ignored) {}
                 finally {
                     ManejoUsuarios.UsuarioActivo = null;
@@ -119,20 +135,29 @@ public class MenuScreen extends BaseScreen {
             }
         });
 
+        // Root table
         Table root = new Table();
         root.setFillParent(true);
         stage.addActor(root);
+
+        // Use centered alignment
         root.top().padTop(40f);
-        root.add(lblTitle).center().padBottom(60f).row();
-        root.defaults().padTop(18f).padBottom(18f).center();
+
+        // Title & subtitle
+        root.add(lblTitle).center().row();
+        root.add(lblSubtitle).center().padBottom(60f).row(); // space below subtitle
+
+        // Buttons
+        root.defaults().padTop(24f).padBottom(24f).center();
         root.add(btnPlay).row();
         root.add(btnLevels).row();
         root.add(btnConfig).row();
-        // NUEVO botón en el menú
         root.add(btnHistorial).row();
         root.add(btnUniverso).row();
         root.add(btnExit).padTop(36f).row();
 
+
+        // Volume
         int volCfg = 70;
         try {
             if (ManejoUsuarios.UsuarioActivo != null && ManejoUsuarios.UsuarioActivo.configuracion != null) {
@@ -148,20 +173,20 @@ public class MenuScreen extends BaseScreen {
 
         Usuario u = ManejoUsuarios.UsuarioActivo;
         String username = (u != null && u.getUsuario() != null) ? u.getUsuario() : "Invitado";
-
         String avatarPath = "ui/default_avatar.png";
         if (u != null && u.avatar != null && !u.avatar.trim().isEmpty() && files.internal(u.avatar).exists()) {
             avatarPath = u.avatar;
         }
 
-        Label.LabelStyle userStyle = new Label.LabelStyle(buttonFont, Color.WHITE);
+        Label.LabelStyle userStyle = new Label.LabelStyle(buttonFont, Color.BLACK);
         userLabel = new Label(username, userStyle);
-        userLabel.setFontScale(1.1f);
+        userLabel.setFontScale(0.6f);
 
         avatarTex = new Texture(avatarPath);
         avatarImg = new Image(avatarTex);
         avatarImg.addListener(new ClickListener() {
-            @Override public void clicked(InputEvent e, float x, float y) {
+            @Override
+            public void clicked(InputEvent e, float x, float y) {
                 game.setScreen(new MiPerfilScreen(game));
             }
         });
@@ -173,6 +198,10 @@ public class MenuScreen extends BaseScreen {
         topRight.add(avatarImg).size(112f, 112f).center();
         stage.addActor(topRight);
     }
+
+
+
+
 
     @Override
     public void hide() {

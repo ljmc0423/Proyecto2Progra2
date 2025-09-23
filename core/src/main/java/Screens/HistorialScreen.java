@@ -32,15 +32,15 @@ public class HistorialScreen extends BaseScreen {
     protected void onShow() {
         // Fuentes similares a MiPerfilScreen (mismo archivo)
         generator = new FreeTypeFontGenerator(files.internal("fonts/pokemon_fire_red.ttf"));
-        titleFont = genFont(88, "E6DFC9");
-        h2Font    = genFont(48, "E6DFC9");
-        bodyFont  = genFont(34, "E6DFC9");
-        smallFont = genFont(26, "BFC4D0");
+        titleFont = genFont(60, "000000");
+        h2Font    = genFont(30, "000000");
+        bodyFont  = genFont(20, "000000");
+        smallFont = genFont(14, "000000");
 
         Label.LabelStyle titleStyle = new Label.LabelStyle(titleFont, titleFont.getColor());
         Label.LabelStyle h2Style    = new Label.LabelStyle(h2Font,    h2Font.getColor());
-        Label.LabelStyle keyStyle   = new Label.LabelStyle(bodyFont,  new Color(1,1,1,0.85f));
-        Label.LabelStyle valStyle   = new Label.LabelStyle(bodyFont,  Color.WHITE);
+        Label.LabelStyle keyStyle   = new Label.LabelStyle(bodyFont,  Color.BLACK);
+        Label.LabelStyle valStyle   = new Label.LabelStyle(bodyFont,  Color.BLACK);
 
         texPanelBg  = makeColorTex(255, 255, 255, 22);
         texDivider  = makeColorTex(255, 255, 255, 38);
@@ -51,13 +51,13 @@ public class HistorialScreen extends BaseScreen {
         // Barra superior con botón volver
         TextButton.TextButtonStyle backStyle = new TextButton.TextButtonStyle();
         backStyle.font = bodyFont;
-        backStyle.fontColor = Color.WHITE;
+        backStyle.fontColor = Color.BLACK;
         Texture transparent = makeColorTex(0,0,0,0);
         TextureRegionDrawable trd = new TextureRegionDrawable(new TextureRegion(transparent));
         backStyle.up = trd; backStyle.over = trd; backStyle.down = trd; backStyle.checked = trd; backStyle.disabled = trd;
 
         TextButton btnBack = new TextButton("Volver", backStyle);
-        btnBack.getLabel().setColor(Color.WHITE);
+        btnBack.getLabel().setColor(Color.BLACK);
         btnBack.addListener(new com.badlogic.gdx.scenes.scene2d.utils.ClickListener() {
             @Override public void clicked(com.badlogic.gdx.scenes.scene2d.InputEvent event, float x, float y) {
                 game.setScreen(new MenuScreen(game));
@@ -82,7 +82,7 @@ public class HistorialScreen extends BaseScreen {
         root.add(sp).expand().fill().pad(0, 16f, 16f, 16f).row();
 
         // Título
-        content.add(new Label("Historial de Partidas", titleStyle)).center().padBottom(10f).row();
+        content.add(new Label("HISTORIAL", titleStyle)).center().padBottom(10f).row();
 
         // Tarjeta
         Table card = new Table();
@@ -96,7 +96,7 @@ public class HistorialScreen extends BaseScreen {
                 : null;
 
         if (historial == null || historial.isEmpty()) {
-            Label empty = new Label("Aún no hay partidas registradas", new Label.LabelStyle(h2Font, new Color(1,1,1,0.8f)));
+            Label empty = new Label("Sin partidas registradas", new Label.LabelStyle(h2Font, Color.BLACK));
             card.add(empty).left().pad(12f).row();
         } else {
             // Encabezados
